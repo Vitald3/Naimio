@@ -1,0 +1,1 @@
+import type { ReactNode } from "react";import { publicMetadata } from "../seo";export const metadata=publicMetadata("Открытые проекты","Публичные проекты с реальным описанием, бюджетом и требуемыми навыками.","/projects");export default function Layout({children}:{children:ReactNode}){return children}

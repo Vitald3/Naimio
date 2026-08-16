@@ -1,0 +1,1 @@
+import type { ReactNode } from "react";import { publicMetadata } from "../seo";export const metadata=publicMetadata("Вакансии","Активные вакансии компаний и прямых работодателей.","/vacancies");export default function Layout({children}:{children:ReactNode}){return children}

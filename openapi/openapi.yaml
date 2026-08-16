@@ -1,0 +1,1882 @@
+openapi: 3.0.3
+info:
+  title: Professional Services Marketplace API
+  version: 0.1.0
+servers:
+  - url: /api/v1
+paths:
+  /health:
+    get:
+      operationId: apiHealth
+      responses:
+        '200':
+          description: Healthy
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Health' }
+  /auth/register:
+    post:
+      operationId: register
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RegisterRequest' }
+      responses:
+        '201': { description: User created }
+        '400': { $ref: '#/components/responses/Error' }
+  /auth/login:
+    post:
+      operationId: login
+      responses:
+        '200': { description: Authenticated }
+        '401': { $ref: '#/components/responses/Error' }
+  /auth/logout:
+    post:
+      operationId: logout
+      responses:
+        '204': { description: Logged out }
+  /auth/logout-all:
+    post:
+      operationId: logoutAll
+      responses:
+        '204': { description: Sessions revoked }
+  /auth/session:
+    get:
+      operationId: currentSession
+      responses:
+        '200': { description: Current session }
+  /auth/verify-email:
+    post:
+      operationId: verifyEmail
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token]
+              additionalProperties: false
+              properties: { token: { type: string, minLength: 32, maxLength: 256 } }
+      responses: { '200': { description: Email verified }, '422': { $ref: '#/components/responses/Error' }, '429': { $ref: '#/components/responses/Error' } }
+  /auth/resend-verification:
+    post:
+      operationId: resendEmailVerification
+      responses: { '204': { description: Verification message queued if still required }, '401': { $ref: '#/components/responses/Error' }, '429': { $ref: '#/components/responses/Error' } }
+  /site-settings:
+    get:
+      operationId: publicSiteSettings
+      responses:
+        '200':
+          description: Public project identity and appearance settings
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/SiteSettings' }
+  /avatars/{identity}:
+    get:
+      operationId: publicUserAvatar
+      parameters:
+        - { name: identity, in: path, required: true, schema: { type: string, minLength: 1, maxLength: 120 } }
+      responses:
+        '307': { description: Redirect to the clean custom avatar or deterministic placeholder }
+        '404': { $ref: '#/components/responses/Error' }
+  /presence/{identity}:
+    get:
+      operationId: publicUserPresence
+      parameters:
+        - { name: identity, in: path, required: true, schema: { type: string, minLength: 1, maxLength: 160 } }
+      responses:
+        '200':
+          description: Whether the user has an active session recently used on the site
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: object
+                    required: [online]
+                    properties: { online: { type: boolean } }
+  /presence/heartbeat:
+    post:
+      operationId: heartbeatUserPresence
+      responses:
+        '204': { description: Presence refreshed through the authenticated session }
+        '401': { $ref: '#/components/responses/Error' }
+  /me:
+    get:
+      operationId: currentUser
+      responses:
+        '200': { description: Current user }
+    patch:
+      operationId: updateCurrentUser
+      responses:
+        '200': { description: Updated user }
+    delete:
+      operationId: deleteCurrentUser
+      responses:
+        '204': { description: Account deleted }
+  /me/capabilities/customer:
+    put:
+      operationId: enableCustomerCapability
+      responses:
+        '200': { description: Capability enabled }
+  /me/capabilities/freelancer:
+    put:
+      operationId: enableFreelancerCapability
+      responses:
+        '200': { description: Capability enabled }
+  /categories:
+    get:
+      operationId: listCategories
+      responses:
+        '200': { description: Category tree }
+  /categories/{slug}:
+    get:
+      operationId: getCategory
+      parameters:
+        - { name: slug, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { description: Category }
+        '404': { $ref: '#/components/responses/Error' }
+  /skills:
+    get:
+      operationId: searchSkills
+      parameters:
+        - { name: q, in: query, required: false, schema: { type: string } }
+      responses:
+        '200': { description: Skills }
+  /admin/categories:
+    get:
+      operationId: listAdminCategories
+      responses: { '200': { description: Full category administration list including inactive items }, '401': { $ref: '#/components/responses/Error' }, '403': { $ref: '#/components/responses/Error' } }
+    post:
+      operationId: createCategory
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/CategoryWrite' } } } }
+      responses: { '201': { description: Category created }, '401': { $ref: '#/components/responses/Error' }, '404': { $ref: '#/components/responses/Error' }, '422': { $ref: '#/components/responses/Error' } }
+  /admin/categories/{id}:
+    put:
+      operationId: updateCategory
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/CategoryWrite' } } } }
+      responses: { '200': { description: Category updated }, '401': { $ref: '#/components/responses/Error' }, '404': { $ref: '#/components/responses/Error' }, '422': { $ref: '#/components/responses/Error' } }
+  /admin/skills:
+    get:
+      operationId: listAdminSkills
+      responses: { '200': { description: Full skill administration list including inactive items }, '401': { $ref: '#/components/responses/Error' }, '403': { $ref: '#/components/responses/Error' } }
+    post:
+      operationId: createSkill
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/SkillWrite' } } } }
+      responses: { '201': { description: Skill created }, '401': { $ref: '#/components/responses/Error' }, '404': { $ref: '#/components/responses/Error' }, '422': { $ref: '#/components/responses/Error' } }
+  /admin/skills/{id}:
+    put:
+      operationId: updateSkill
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/SkillWrite' } } } }
+      responses: { '200': { description: Skill updated }, '401': { $ref: '#/components/responses/Error' }, '404': { $ref: '#/components/responses/Error' }, '422': { $ref: '#/components/responses/Error' } }
+  /admin/dashboard:
+    get:
+      operationId: adminDashboard
+      responses: { '200': { description: Operational admin metrics }, '401': { $ref: '#/components/responses/Error' }, '403': { $ref: '#/components/responses/Error' } }
+  /admin/users:
+    get:
+      operationId: adminListUsers
+      parameters:
+        - { name: q, in: query, required: false, schema: { type: string } }
+        - { name: status, in: query, required: false, schema: { type: string } }
+        - { name: role, in: query, required: false, schema: { type: string } }
+        - { name: capability, in: query, required: false, schema: { type: string } }
+        - { name: cursor, in: query, required: false, schema: { type: string } }
+        - { name: limit, in: query, required: false, schema: { type: integer, minimum: 1, maximum: 100 } }
+      responses: { '200': { description: Paginated users }, '403': { $ref: '#/components/responses/Error' } }
+  /admin/users/{id}:
+    get:
+      operationId: adminGetUser
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses: { '200': { description: User detail }, '403': { $ref: '#/components/responses/Error' }, '404': { $ref: '#/components/responses/Error' } }
+  /admin/users/{id}/status:
+    patch:
+      operationId: adminSetUserStatus
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses: { '200': { description: User status updated }, '403': { $ref: '#/components/responses/Error' } }
+  /admin/users/{id}/revoke-sessions:
+    post:
+      operationId: adminRevokeUserSessions
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses: { '204': { description: Sessions revoked }, '403': { $ref: '#/components/responses/Error' } }
+  /admin/users/{id}/roles/{role}:
+    put:
+      operationId: adminGrantRole
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: role, in: path, required: true, schema: { type: string } }
+      responses: { '200': { description: Role granted }, '403': { $ref: '#/components/responses/Error' } }
+    delete:
+      operationId: adminRevokeRole
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: role, in: path, required: true, schema: { type: string } }
+      responses: { '200': { description: Role revoked }, '403': { $ref: '#/components/responses/Error' } }
+  /admin/feature-flags:
+    get:
+      operationId: adminListFeatureFlags
+      responses: { '200': { description: Feature flags }, '403': { $ref: '#/components/responses/Error' } }
+  /admin/feature-flags/{key}:
+    patch:
+      operationId: adminUpdateFeatureFlag
+      parameters: [{ name: key, in: path, required: true, schema: { type: string, maxLength: 100 } }]
+      responses: { '200': { description: Feature flag updated }, '403': { $ref: '#/components/responses/Error' } }
+  /admin/reports:
+    get:
+      operationId: adminListReports
+      responses: { '200': { description: Paginated moderation reports }, '403': { $ref: '#/components/responses/Error' } }
+  /admin/reports/{id}/status:
+    patch:
+      operationId: adminUpdateReport
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses: { '200': { description: Report updated }, '403': { $ref: '#/components/responses/Error' } }
+  /admin/fraud-signals:
+    get:
+      operationId: adminListFraudSignals
+      responses: { '200': { description: Paginated fraud signals }, '403': { $ref: '#/components/responses/Error' } }
+  /admin/fraud-signals/{id}/status:
+    patch:
+      operationId: adminUpdateFraudSignal
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses: { '200': { description: Fraud signal updated }, '403': { $ref: '#/components/responses/Error' } }
+  /admin/audit:
+    get:
+      operationId: adminListAudit
+      responses: { '200': { description: Paginated immutable audit entries }, '403': { $ref: '#/components/responses/Error' } }
+  /admin/projects:
+    get:
+      operationId: adminListProjects
+      responses: { '200': { description: Paginated project moderation list }, '403': { $ref: '#/components/responses/Error' } }
+  /admin/projects/{id}/moderation:
+    post:
+      operationId: adminModerateProject
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses: { '200': { description: Project moderation updated }, '403': { $ref: '#/components/responses/Error' } }
+  /admin/services:
+    get:
+      operationId: adminListServices
+      responses: { '200': { description: Paginated service moderation list }, '403': { $ref: '#/components/responses/Error' } }
+  /admin/vacancies:
+    get:
+      operationId: adminListVacancies
+      responses: { '200': { description: Paginated vacancy moderation list }, '403': { $ref: '#/components/responses/Error' } }
+  /admin/reviews:
+    get:
+      operationId: adminListReviews
+      responses: { '200': { description: Paginated review moderation list }, '403': { $ref: '#/components/responses/Error' } }
+  /admin/disputes:
+    get:
+      operationId: adminListDisputes
+      responses: { '200': { description: Paginated Safe Deal disputes }, '403': { $ref: '#/components/responses/Error' } }
+  /profiles/{username}:
+    get:
+      operationId: getPublicProfile
+      parameters:
+        - { name: username, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { description: Public profile }
+        '404': { $ref: '#/components/responses/Error' }
+  /profiles/{username}/external-reputations:
+    get:
+      operationId: listPublicExternalReputations
+      parameters:
+        - { name: username, in: path, required: true, schema: { type: string, maxLength: 40 } }
+      responses:
+        '200':
+          description: Verified external reputation only
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { type: array, items: { $ref: '#/components/schemas/PublicExternalReputation' } }
+        '404': { $ref: '#/components/responses/Error' }
+  /me/external-reputations:
+    get:
+      operationId: listMyExternalReputations
+      responses:
+        '200': { description: Owner external reputations }
+        '401': { $ref: '#/components/responses/Error' }
+    post:
+      operationId: createMyExternalReputation
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/ExternalReputationCreate' } } } }
+      responses:
+        '201': { description: External reputation created as UNVERIFIED }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/Error' }
+        '409': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
+  /me/external-reputations/{id}:
+    parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+    patch:
+      operationId: updateMyExternalReputation
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/ExternalReputationPatch' } } } }
+      responses: { '200': { description: Updated unverified external reputation }, '401': { $ref: '#/components/responses/Error' }, '404': { $ref: '#/components/responses/Error' }, '409': { $ref: '#/components/responses/Error' }, '422': { $ref: '#/components/responses/Error' } }
+    delete:
+      operationId: deleteMyExternalReputation
+      responses: { '204': { description: Deleted }, '401': { $ref: '#/components/responses/Error' }, '404': { $ref: '#/components/responses/Error' } }
+  /me/external-reputations/{id}/verification:
+    parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+    post:
+      operationId: startExternalReputationVerification
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/ReputationVerificationStart' } } } }
+      responses: { '201': { description: Verification challenge created }, '401': { $ref: '#/components/responses/Error' }, '404': { $ref: '#/components/responses/Error' }, '409': { $ref: '#/components/responses/Error' }, '422': { $ref: '#/components/responses/Error' } }
+    get:
+      operationId: getExternalReputationVerification
+      responses: { '200': { description: Current verification status }, '401': { $ref: '#/components/responses/Error' }, '404': { $ref: '#/components/responses/Error' } }
+  /admin/external-reputations:
+    get:
+      operationId: listPendingExternalReputations
+      parameters: [{ name: status, in: query, required: false, schema: { type: string, enum: [PENDING] } }]
+      responses: { '200': { description: Private moderator verification queue }, '401': { $ref: '#/components/responses/Error' }, '403': { $ref: '#/components/responses/Error' } }
+  /admin/external-reputations/{id}/verify:
+    post:
+      operationId: verifyExternalReputation
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/ReputationDecision' } } } }
+      responses: { '200': { description: Verified and audited }, '401': { $ref: '#/components/responses/Error' }, '403': { $ref: '#/components/responses/Error' }, '404': { $ref: '#/components/responses/Error' } }
+  /admin/external-reputations/{id}/reject:
+    post:
+      operationId: rejectExternalReputation
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/ReputationDecision' } } } }
+      responses: { '200': { description: Rejected and audited }, '401': { $ref: '#/components/responses/Error' }, '403': { $ref: '#/components/responses/Error' }, '404': { $ref: '#/components/responses/Error' }, '422': { $ref: '#/components/responses/Error' } }
+  /projects/{project_id}/reviews:
+    post:
+      operationId: createProjectReview
+      parameters: [{ name: project_id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/ReviewCreate' } } } }
+      responses: { '201': { description: Native review created for an eligible completed project }, '401': { $ref: '#/components/responses/Error' }, '404': { $ref: '#/components/responses/Error' }, '409': { $ref: '#/components/responses/Error' }, '422': { $ref: '#/components/responses/Error' } }
+  /profiles/{username}/reviews:
+    get:
+      operationId: listPublicProfileReviews
+      parameters:
+        - { name: username, in: path, required: true, schema: { type: string, maxLength: 40 } }
+        - { name: cursor, in: query, required: false, schema: { type: string } }
+        - { name: limit, in: query, required: false, schema: { type: integer, minimum: 1, maximum: 50, default: 20 } }
+      responses: { '200': { description: Published native reviews and materialized trust summary }, '404': { $ref: '#/components/responses/Error' } }
+  /me/reviews/given:
+    get:
+      operationId: listMyGivenReviews
+      parameters:
+        - { name: cursor, in: query, required: false, schema: { type: string } }
+        - { name: limit, in: query, required: false, schema: { type: integer, minimum: 1, maximum: 50, default: 20 } }
+      responses: { '200': { description: Reviews created by the current actor }, '401': { $ref: '#/components/responses/Error' } }
+  /reviews/{id}/reports:
+    post:
+      operationId: reportReview
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/ReviewReport' } } } }
+      responses: { '204': { description: Report accepted }, '401': { $ref: '#/components/responses/Error' }, '404': { $ref: '#/components/responses/Error' }, '409': { $ref: '#/components/responses/Error' }, '422': { $ref: '#/components/responses/Error' } }
+  /admin/reviews/{id}/hide:
+    post:
+      operationId: hideReview
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/ModerationReason' } } } }
+      responses: { '200': { description: Review hidden without content editing }, '401': { $ref: '#/components/responses/Error' }, '403': { $ref: '#/components/responses/Error' }, '404': { $ref: '#/components/responses/Error' } }
+  /admin/reviews/{id}/restore:
+    post:
+      operationId: restoreReview
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/ModerationReason' } } } }
+      responses: { '200': { description: Review restored without content editing }, '401': { $ref: '#/components/responses/Error' }, '403': { $ref: '#/components/responses/Error' }, '404': { $ref: '#/components/responses/Error' } }
+  /freelancers:
+    get:
+      operationId: listFreelancers
+      parameters:
+        - { name: q, in: query, required: false, schema: { type: string, maxLength: 120 } }
+        - { name: cursor, in: query, required: false, schema: { type: string } }
+        - { name: limit, in: query, required: false, schema: { type: integer, minimum: 1, maximum: 50, default: 20 } }
+      responses:
+        '200': { description: Public freelancer cards }
+  /me/professional-profile:
+    patch:
+      operationId: updateProfessionalProfile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ProfessionalProfileUpdate' }
+      responses:
+        '200': { description: Updated profile }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+        '413': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
+  /me/categories:
+    put:
+      operationId: replaceMyProfileCategories
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ProfileCategoriesUpdate' }
+      responses:
+        '200': { description: Updated profile categories }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+        '413': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
+  /me/skills:
+    put:
+      operationId: replaceMyProfileSkills
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ProfileSkillsUpdate' }
+      responses:
+        '200': { description: Updated profile skills }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+        '413': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
+  /me/languages:
+    put:
+      operationId: replaceMyProfileLanguages
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ProfileLanguagesUpdate' }
+      responses:
+        '200': { description: Updated profile languages }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+        '413': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
+  /profiles/{username}/portfolio:
+    get:
+      operationId: listPublicPortfolio
+      parameters:
+        - { name: username, in: path, required: true, schema: { type: string } }
+        - { name: cursor, in: query, required: false, schema: { type: string } }
+        - { name: limit, in: query, required: false, schema: { type: integer, minimum: 1, maximum: 50, default: 20 } }
+      responses:
+        '200': { description: Public visible portfolio items }
+        '400': { $ref: '#/components/responses/Error' }
+        '429': { $ref: '#/components/responses/Error' }
+  /me/portfolio:
+    post:
+      operationId: createPortfolioItem
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PortfolioWriteRequest' }
+      responses:
+        '201': { description: Created portfolio item }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/Error' }
+        '409': { $ref: '#/components/responses/Error' }
+        '413': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
+        '429': { $ref: '#/components/responses/Error' }
+  /me/portfolio/{id}:
+    get:
+      operationId: getMyPortfolioItem
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200': { description: Owned portfolio item }
+        '401': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+        '429': { $ref: '#/components/responses/Error' }
+    patch:
+      operationId: updateMyPortfolioItem
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PortfolioWriteRequest' }
+      responses:
+        '200': { description: Updated portfolio item }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+        '409': { $ref: '#/components/responses/Error' }
+        '413': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
+        '429': { $ref: '#/components/responses/Error' }
+    delete:
+      operationId: deleteMyPortfolioItem
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '204': { description: Portfolio item soft-deleted }
+        '401': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+        '429': { $ref: '#/components/responses/Error' }
+  /me/portfolio/{id}/media:
+    post:
+      operationId: attachPortfolioMedia
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PortfolioMediaAttachRequest' }
+      responses:
+        '200': { description: Media attached }
+        '401': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
+        '429': { $ref: '#/components/responses/Error' }
+  /me/portfolio/{id}/media/{media_id}:
+    delete:
+      operationId: detachPortfolioMedia
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: media_id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '204': { description: Media detached }
+        '401': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+        '429': { $ref: '#/components/responses/Error' }
+  /uploads/presign:
+    post:
+      operationId: createUploadPresign
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UploadPresignRequest' }
+      responses:
+        '201': { description: Upload target and pending media metadata created }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/Error' }
+        '413': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
+        '429': { $ref: '#/components/responses/Error' }
+  /uploads/{id}/complete:
+    post:
+      operationId: completeUpload
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200': { description: Object validated and queued at the scan boundary }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+        '413': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
+        '429': { $ref: '#/components/responses/Error' }
+  /uploads/{id}:
+    get:
+      operationId: getUpload
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200': { description: Owned media metadata and a short-lived download URL only when safe }
+        '401': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+        '429': { $ref: '#/components/responses/Error' }
+    delete:
+      operationId: deleteUpload
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '204': { description: Owned media object deleted }
+        '401': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+        '429': { $ref: '#/components/responses/Error' }
+  /services:
+    get:
+      operationId: listPublicServices
+      parameters:
+        - { name: q, in: query, required: false, schema: { type: string, maxLength: 120 } }
+        - { name: category, in: query, required: false, schema: { type: string, maxLength: 120 } }
+        - { name: service_type, in: query, required: false, schema: { type: string, enum: [PROFESSIONAL_SERVICE, CONSULTATION, EDUCATION, MENTORING] } }
+        - { name: price_type, in: query, required: false, schema: { type: string, enum: [FIXED, FROM, HOURLY, NEGOTIABLE] } }
+        - { name: format, in: query, required: false, schema: { type: string, enum: [ONLINE, OFFLINE, ASYNC, HYBRID] } }
+        - { name: audience, in: query, required: false, schema: { type: string, enum: [INDIVIDUAL, GROUP, BOTH] } }
+        - { name: cursor, in: query, required: false, schema: { type: string } }
+        - { name: limit, in: query, required: false, schema: { type: integer, minimum: 1, maximum: 50, default: 20 } }
+      responses:
+        '200': { description: Cursor-paginated active public services }
+        '400': { $ref: '#/components/responses/Error' }
+        '429': { $ref: '#/components/responses/Error' }
+  /services/{service_id_or_slug}:
+    get:
+      operationId: getPublicService
+      parameters:
+        - { name: service_id_or_slug, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { description: Active public service }
+        '404': { $ref: '#/components/responses/Error' }
+        '429': { $ref: '#/components/responses/Error' }
+  /me/services:
+    get:
+      operationId: listMyServices
+      parameters:
+        - { name: cursor, in: query, required: false, schema: { type: string } }
+        - { name: limit, in: query, required: false, schema: { type: integer, minimum: 1, maximum: 50, default: 20 } }
+      responses:
+        '200': { description: Cursor-paginated owned services }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/Error' }
+        '429': { $ref: '#/components/responses/Error' }
+    post:
+      operationId: createService
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ServiceCreateRequest' }
+      responses:
+        '201': { description: Draft service created }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/Error' }
+        '403': { $ref: '#/components/responses/Error' }
+        '409': { $ref: '#/components/responses/Error' }
+        '413': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
+        '429': { $ref: '#/components/responses/Error' }
+  /me/services/{id}:
+    get:
+      operationId: getMyService
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200': { description: Owned service }
+        '401': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+        '429': { $ref: '#/components/responses/Error' }
+    patch:
+      operationId: updateMyService
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ServicePatchRequest' }
+      responses:
+        '200': { description: Owned draft or paused service updated }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+        '409': { $ref: '#/components/responses/Error' }
+        '413': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
+        '429': { $ref: '#/components/responses/Error' }
+    delete:
+      operationId: deleteMyService
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '204': { description: Service archived and soft-deleted }
+        '401': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+        '429': { $ref: '#/components/responses/Error' }
+  /me/services/{id}/publish:
+    post:
+      operationId: publishMyService
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200': { description: Service explicitly published }
+        '401': { $ref: '#/components/responses/Error' }
+        '403': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+        '409': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
+        '429': { $ref: '#/components/responses/Error' }
+  /me/services/{id}/pause:
+    post:
+      operationId: pauseMyService
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200': { description: Active service paused }
+        '401': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+        '409': { $ref: '#/components/responses/Error' }
+        '429': { $ref: '#/components/responses/Error' }
+  /me/services/{id}/resume:
+    post:
+      operationId: resumeMyService
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200': { description: Paused service resumed }
+        '401': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+        '409': { $ref: '#/components/responses/Error' }
+        '429': { $ref: '#/components/responses/Error' }
+  /projects:
+    get:
+      operationId: listPublicProjects
+      parameters:
+        - { name: q, in: query, required: false, schema: { type: string, maxLength: 120 } }
+        - { name: category, in: query, required: false, schema: { type: string, maxLength: 120 } }
+        - { name: budget_type, in: query, required: false, schema: { $ref: '#/components/schemas/ProjectBudgetType' } }
+        - { name: experience_level, in: query, required: false, schema: { $ref: '#/components/schemas/ProjectExperienceLevel' } }
+        - { name: cursor, in: query, required: false, schema: { type: string } }
+        - { name: limit, in: query, required: false, schema: { type: integer, minimum: 1, maximum: 50, default: 20 } }
+      responses:
+        '200': { description: Cursor-paginated public open projects }
+        '400': { $ref: '#/components/responses/Error' }
+        '429': { $ref: '#/components/responses/Error' }
+  /projects/{project_id_or_slug}:
+    get:
+      operationId: getPublicProject
+      parameters:
+        - { name: project_id_or_slug, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { description: Public open project }
+        '404': { $ref: '#/components/responses/Error' }
+        '429': { $ref: '#/components/responses/Error' }
+  /me/projects:
+    get:
+      operationId: listMyProjects
+      parameters:
+        - { name: cursor, in: query, required: false, schema: { type: string } }
+        - { name: limit, in: query, required: false, schema: { type: integer, minimum: 1, maximum: 50, default: 20 } }
+      responses:
+        '200': { description: Cursor-paginated owned projects }
+        '401': { $ref: '#/components/responses/Error' }
+        '429': { $ref: '#/components/responses/Error' }
+    post:
+      operationId: createProject
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/ProjectCreateRequest' } } }
+      responses:
+        '201': { description: Manual draft project created }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/Error' }
+        '403': { $ref: '#/components/responses/Error' }
+        '409': { $ref: '#/components/responses/Error' }
+        '413': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
+        '429': { $ref: '#/components/responses/Error' }
+  /me/projects/{id}:
+    get:
+      operationId: getMyProject
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        '200': { description: Owned project }
+        '401': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+        '429': { $ref: '#/components/responses/Error' }
+    patch:
+      operationId: updateMyDraftProject
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/ProjectPatchRequest' } } }
+      responses:
+        '200': { description: Owned draft project updated }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+        '409': { $ref: '#/components/responses/Error' }
+        '413': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
+        '429': { $ref: '#/components/responses/Error' }
+    delete:
+      operationId: archiveMyProject
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        '204': { description: Eligible owned project archived and soft-deleted }
+        '401': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+        '409': { $ref: '#/components/responses/Error' }
+        '429': { $ref: '#/components/responses/Error' }
+  /me/projects/{id}/publish:
+    post:
+      operationId: publishMyProject
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        '200': { description: Draft project published }
+        '401': { $ref: '#/components/responses/Error' }
+        '403': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+        '409': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
+        '429': { $ref: '#/components/responses/Error' }
+  /me/projects/{id}/cancel:
+    post:
+      operationId: cancelMyProject
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        '200': { description: Project cancelled }
+        '401': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+        '409': { $ref: '#/components/responses/Error' }
+        '429': { $ref: '#/components/responses/Error' }
+  /me/projects/{id}/complete:
+    post:
+      operationId: completeMyProject
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: Idempotency-Key, in: header, required: false, schema: { type: string, maxLength: 128 } }
+      responses:
+        '200': { description: In-progress project completed idempotently }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+        '409': { $ref: '#/components/responses/Error' }
+        '429': { $ref: '#/components/responses/Error' }
+  /projects/{project_id}/proposals:
+    post:
+      operationId: submitProposal
+      parameters: [{ name: project_id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/ProposalWrite' } } } }
+      responses: { '201': { description: Proposal submitted }, '401': { $ref: '#/components/responses/Error' }, '403': { $ref: '#/components/responses/Error' }, '409': { $ref: '#/components/responses/Error' }, '422': { $ref: '#/components/responses/Error' }, '429': { $ref: '#/components/responses/Error' } }
+  /me/proposals:
+    get:
+      operationId: listMyProposals
+      parameters:
+        - { name: cursor, in: query, required: false, schema: { type: string } }
+        - { name: limit, in: query, required: false, schema: { type: integer, minimum: 1, maximum: 50 } }
+      responses: { '200': { description: Freelancer proposals }, '401': { $ref: '#/components/responses/Error' }, '429': { $ref: '#/components/responses/Error' } }
+  /me/proposals/{id}:
+    get:
+      operationId: getMyProposal
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses: { '200': { description: Owned proposal }, '401': { $ref: '#/components/responses/Error' }, '404': { $ref: '#/components/responses/Error' } }
+    patch:
+      operationId: updateMyProposal
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/ProposalWrite' } } } }
+      responses: { '200': { description: Pending proposal updated }, '401': { $ref: '#/components/responses/Error' }, '404': { $ref: '#/components/responses/Error' }, '409': { $ref: '#/components/responses/Error' }, '422': { $ref: '#/components/responses/Error' } }
+  /me/proposals/{id}/withdraw:
+    post:
+      operationId: withdrawMyProposal
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses: { '200': { description: Proposal withdrawn idempotently }, '401': { $ref: '#/components/responses/Error' }, '404': { $ref: '#/components/responses/Error' }, '409': { $ref: '#/components/responses/Error' } }
+  /me/projects/{project_id}/proposals:
+    get:
+      operationId: listProjectProposals
+      parameters:
+        - { name: project_id, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: cursor, in: query, required: false, schema: { type: string } }
+        - { name: limit, in: query, required: false, schema: { type: integer, minimum: 1, maximum: 50 } }
+      responses: { '200': { description: Customer project proposals }, '401': { $ref: '#/components/responses/Error' }, '404': { $ref: '#/components/responses/Error' } }
+  /me/projects/{project_id}/proposals/{proposal_id}/shortlist:
+    post:
+      operationId: shortlistProposal
+      parameters: [{ name: project_id, in: path, required: true, schema: { type: string, format: uuid } }, { name: proposal_id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses: { '200': { description: Proposal shortlisted }, '401': { $ref: '#/components/responses/Error' }, '404': { $ref: '#/components/responses/Error' }, '409': { $ref: '#/components/responses/Error' } }
+  /me/projects/{project_id}/proposals/{proposal_id}/accept:
+    post:
+      operationId: acceptProposal
+      parameters: [{ name: project_id, in: path, required: true, schema: { type: string, format: uuid } }, { name: proposal_id, in: path, required: true, schema: { type: string, format: uuid } }, { name: Idempotency-Key, in: header, required: false, schema: { type: string, maxLength: 128 } }]
+      responses: { '200': { description: Proposal accepted transactionally }, '401': { $ref: '#/components/responses/Error' }, '404': { $ref: '#/components/responses/Error' }, '409': { $ref: '#/components/responses/Error' } }
+  /me/projects/{project_id}/proposals/{proposal_id}/reject:
+    post:
+      operationId: rejectProposal
+      parameters: [{ name: project_id, in: path, required: true, schema: { type: string, format: uuid } }, { name: proposal_id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses: { '200': { description: Proposal rejected }, '401': { $ref: '#/components/responses/Error' }, '404': { $ref: '#/components/responses/Error' }, '409': { $ref: '#/components/responses/Error' } }
+  /me/favorites:
+    get:
+      operationId: listMyFavorites
+      parameters:
+        - { name: type, in: query, required: false, schema: { type: string, enum: [FREELANCER, SERVICE, PROJECT] } }
+        - { name: cursor, in: query, required: false, schema: { type: string } }
+        - { name: limit, in: query, required: false, schema: { type: integer, minimum: 1, maximum: 50 } }
+      responses: { '200': { description: Visible favorites }, '401': { $ref: '#/components/responses/Error' } }
+  /me/favorites/{entity_type}/{entity_id}:
+    put:
+      operationId: putFavorite
+      parameters: [{ name: entity_type, in: path, required: true, schema: { type: string, enum: [FREELANCER, SERVICE, PROJECT] } }, { name: entity_id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses: { '200': { description: Favorite stored idempotently }, '401': { $ref: '#/components/responses/Error' }, '404': { $ref: '#/components/responses/Error' }, '422': { $ref: '#/components/responses/Error' } }
+    delete:
+      operationId: deleteFavorite
+      parameters: [{ name: entity_type, in: path, required: true, schema: { type: string, enum: [FREELANCER, SERVICE, PROJECT] } }, { name: entity_id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses: { '204': { description: Favorite removed idempotently }, '401': { $ref: '#/components/responses/Error' }, '422': { $ref: '#/components/responses/Error' } }
+  /conversations:
+    get:
+      operationId: listConversations
+      responses: { '200': { description: Authenticated member conversations }, '401': { $ref: '#/components/responses/Error' } }
+    post:
+      operationId: createConversation
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/ConversationCreate' } } } }
+      responses: { '201': { description: Conversation created or returned }, '401': { $ref: '#/components/responses/Error' }, '404': { $ref: '#/components/responses/Error' }, '422': { $ref: '#/components/responses/Error' } }
+  /conversations/{id}:
+    get:
+      operationId: getConversation
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses: { '200': { description: Member conversation }, '401': { $ref: '#/components/responses/Error' }, '404': { $ref: '#/components/responses/Error' } }
+  /conversations/{id}/messages:
+    parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+    get:
+      operationId: listConversationMessages
+      parameters: [{ name: before, in: query, schema: { type: string } }, { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 100 } }]
+      responses: { '200': { description: Newest-first cursor page }, '401': { $ref: '#/components/responses/Error' }, '404': { $ref: '#/components/responses/Error' } }
+    post:
+      operationId: sendConversationMessage
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/MessageCreate' } } } }
+      responses: { '201': { description: Persisted message }, '401': { $ref: '#/components/responses/Error' }, '404': { $ref: '#/components/responses/Error' }, '422': { $ref: '#/components/responses/Error' }, '429': { $ref: '#/components/responses/Error' } }
+  /conversations/{id}/read:
+    post:
+      operationId: markConversationRead
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody: { required: true, content: { application/json: { schema: { type: object, required: [last_read_message_id], additionalProperties: false, properties: { last_read_message_id: { type: string, format: uuid } } } } } }
+      responses: { '204': { description: Monotonic read marker advanced }, '404': { $ref: '#/components/responses/Error' } }
+  /messages/{id}:
+    parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+    patch:
+      operationId: editMessage
+      requestBody: { required: true, content: { application/json: { schema: { type: object, required: [body], additionalProperties: false, properties: { body: { type: string, minLength: 1, maxLength: 10000 } } } } } }
+      responses: { '200': { description: Sender text message edited }, '404': { $ref: '#/components/responses/Error' } }
+    delete:
+      operationId: deleteMessage
+      responses: { '200': { description: Sender message soft-deleted }, '404': { $ref: '#/components/responses/Error' } }
+  /messages/{message_id}/attachments/{media_id}:
+    get:
+      operationId: getMessageAttachment
+      parameters:
+        - { name: message_id, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: media_id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses: { '200': { description: Short-lived private download URL for a conversation member }, '404': { $ref: '#/components/responses/Error' } }
+  /notifications:
+    get:
+      operationId: listNotifications
+      parameters: [{ name: before, in: query, schema: { type: string } }, { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 100 } }]
+      responses: { '200': { description: Current user's notifications }, '401': { $ref: '#/components/responses/Error' } }
+  /notifications/{id}/read:
+    post:
+      operationId: markNotificationRead
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses: { '204': { description: Notification marked read }, '404': { $ref: '#/components/responses/Error' } }
+  /notifications/read-all:
+    post:
+      operationId: markAllNotificationsRead
+      responses: { '204': { description: All current-user notifications marked read } }
+  /notification-preferences:
+    get:
+      operationId: getNotificationPreferences
+      responses: { '200': { description: Current-user notification preferences } }
+    put:
+      operationId: replaceNotificationPreferences
+      responses: { '200': { description: Notification preferences replaced }, '422': { $ref: '#/components/responses/Error' } }
+  /ws:
+    get:
+      operationId: communicationWebSocket
+      responses: { '101': { description: Authenticated realtime connection }, '401': { $ref: '#/components/responses/Error' } }
+  /me/invites:
+    post:
+      operationId: createInvite
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/InviteCreate' } } } }
+      responses: { '201': { description: Hashed expiring invite created }, '401': { $ref: '#/components/responses/Error' }, '404': { $ref: '#/components/responses/Error' }, '422': { $ref: '#/components/responses/Error' }, '429': { $ref: '#/components/responses/Error' } }
+  /invites/{token}/preview:
+    get:
+      operationId: previewInvite
+      parameters: [{ name: token, in: path, required: true, schema: { type: string, minLength: 43, maxLength: 43 } }]
+      responses: { '200': { description: Safe public invite preview }, '404': { $ref: '#/components/responses/Error' } }
+  /invites/{token}/accept:
+    post:
+      operationId: acceptInvite
+      parameters:
+        - { name: token, in: path, required: true, schema: { type: string, minLength: 43, maxLength: 43 } }
+        - { name: Idempotency-Key, in: header, required: true, schema: { type: string, minLength: 8, maxLength: 128 } }
+      responses: { '200': { description: Invite accepted idempotently }, '401': { $ref: '#/components/responses/Error' }, '404': { $ref: '#/components/responses/Error' }, '422': { $ref: '#/components/responses/Error' } }
+  /me/referrals:
+    get:
+      operationId: getMyReferrals
+      responses: { '200': { description: First-touch attribution and immutable promotional rewards }, '401': { $ref: '#/components/responses/Error' } }
+  /admin/referral-rules:
+    get:
+      operationId: listReferralRules
+      responses: { '200': { description: Audited referral rules }, '403': { $ref: '#/components/responses/Error' } }
+    post:
+      operationId: createReferralRule
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/ReferralRuleWrite' } } } }
+      responses: { '201': { description: Referral rule created and audited }, '403': { $ref: '#/components/responses/Error' }, '422': { $ref: '#/components/responses/Error' } }
+  /admin/referral-rules/{id}:
+    patch:
+      operationId: updateReferralRule
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/ReferralRuleWrite' } } } }
+      responses: { '200': { description: Referral rule updated and audited }, '403': { $ref: '#/components/responses/Error' }, '404': { $ref: '#/components/responses/Error' } }
+  /me/projects/{id}/repeat:
+    post:
+      operationId: repeatProject
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody: { required: true, content: { application/json: { schema: { type: object, additionalProperties: false, properties: { invite_previous_freelancer: { type: boolean } } } } } }
+      responses: { '201': { description: Clean editable REPEAT draft }, '404': { $ref: '#/components/responses/Error' }, '409': { $ref: '#/components/responses/Error' } }
+  /me/projects/{id}/share:
+    post:
+      operationId: sharePublicProject
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses: { '200': { description: Safe public project URL }, '404': { $ref: '#/components/responses/Error' } }
+  /me/customer-team:
+    get:
+      operationId: getCustomerTeam
+      responses: { '200': { description: Customer's explicit recurring freelancers }, '404': { $ref: '#/components/responses/Error' } }
+  /me/customer-team/{freelancer_user_id}:
+    parameters: [{ name: freelancer_user_id, in: path, required: true, schema: { type: string, format: uuid } }]
+    put:
+      operationId: putCustomerTeamMember
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/TeamMemberWrite' } } } }
+      responses: { '200': { description: Team member saved idempotently }, '404': { $ref: '#/components/responses/Error' } }
+    patch:
+      operationId: updateCustomerTeamMember
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/TeamMemberWrite' } } } }
+      responses: { '200': { description: Team member label or notes updated }, '404': { $ref: '#/components/responses/Error' } }
+    delete:
+      operationId: deleteCustomerTeamMember
+      responses: { '204': { description: Team member removed }, '404': { $ref: '#/components/responses/Error' } }
+  /me/invited-projects/{id}:
+    get:
+      operationId: getAcceptedInvitedProject
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses: { '200': { description: Project accepted by this invited freelancer }, '404': { $ref: '#/components/responses/Error' } }
+  /project-drafts:
+    post:
+      operationId: createProjectDraft
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/ProjectDraftWrite' } } } }
+      responses: { '201': { description: Scoped guest or authenticated draft and one-time continuity token }, '413': { $ref: '#/components/responses/Error' }, '422': { $ref: '#/components/responses/Error' }, '429': { $ref: '#/components/responses/Error' } }
+  /project-drafts/{draft_token}:
+    parameters: [{ name: draft_token, in: path, required: true, schema: { type: string, minLength: 64, maxLength: 64 } }]
+    get:
+      operationId: getProjectDraft
+      responses: { '200': { description: Authorized unexpired editable draft }, '404': { $ref: '#/components/responses/Error' }, '429': { $ref: '#/components/responses/Error' } }
+    patch:
+      operationId: updateProjectDraft
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/ProjectDraftWrite' } } } }
+      responses: { '200': { description: Draft updated }, '404': { $ref: '#/components/responses/Error' }, '413': { $ref: '#/components/responses/Error' }, '429': { $ref: '#/components/responses/Error' } }
+  /project-drafts/{draft_token}/claim:
+    post:
+      operationId: claimProjectDraft
+      parameters: [{ name: draft_token, in: path, required: true, schema: { type: string, minLength: 64, maxLength: 64 } }]
+      responses: { '200': { description: Draft atomically assigned to authenticated user }, '401': { $ref: '#/components/responses/Error' }, '404': { $ref: '#/components/responses/Error' } }
+  /ai/project-brief:
+    post: { operationId: generateProjectBrief, requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/AIProjectInput' } } } }, responses: { '200': { description: Validated editable project brief suggestion }, '413': { $ref: '#/components/responses/Error' }, '422': { $ref: '#/components/responses/Error' }, '429': { $ref: '#/components/responses/Error' } } }
+  /ai/project-import:
+    post: { operationId: importProjectMaterial, requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/AIProjectInput' } } } }, responses: { '200': { description: Validated editable imported project suggestion }, '413': { $ref: '#/components/responses/Error' }, '422': { $ref: '#/components/responses/Error' }, '429': { $ref: '#/components/responses/Error' } } }
+  /ai/project-estimate:
+    post: { operationId: estimateProject, requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/AIProjectInput' } } } }, responses: { '200': { description: Indicative hybrid range, duration and drivers }, '422': { $ref: '#/components/responses/Error' }, '429': { $ref: '#/components/responses/Error' } } }
+  /ai/commercial-offer-analysis:
+    post: { operationId: analyzeCommercialOffer, requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/AIProjectInput' } } } }, responses: { '200': { description: Neutral structured offer analysis }, '422': { $ref: '#/components/responses/Error' }, '429': { $ref: '#/components/responses/Error' } } }
+  /ai/taxonomy-suggestions:
+    post: { operationId: suggestProjectTaxonomy, requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/AIProjectInput' } } } }, responses: { '200': { description: Existing taxonomy entities only }, '422': { $ref: '#/components/responses/Error' }, '429': { $ref: '#/components/responses/Error' } } }
+  /me/projects/{project_id}/matching-runs:
+    post:
+      operationId: createMatchingRun
+      parameters: [{ name: project_id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/MatchingConstraints' } } } }
+      responses: { '201': { description: Bounded deterministic matching run, optionally reranked }, '401': { $ref: '#/components/responses/Error' }, '404': { $ref: '#/components/responses/Error' }, '409': { $ref: '#/components/responses/Error' }, '429': { $ref: '#/components/responses/Error' } }
+  /me/projects/{project_id}/matching-runs/{run_id}:
+    get:
+      operationId: getMatchingRun
+      parameters: [{ name: project_id, in: path, required: true, schema: { type: string, format: uuid } }, { name: run_id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses: { '200': { description: Owned persisted matching run }, '404': { $ref: '#/components/responses/Error' } }
+  /me/projects/{project_id}/recommendations:
+    get:
+      operationId: getProjectRecommendations
+      parameters: [{ name: project_id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses: { '200': { description: Safe compact recommendation cards and explanations }, '404': { $ref: '#/components/responses/Error' } }
+  /me/projects/{project_id}/matching-events:
+    post:
+      operationId: recordMatchingQualityEvent
+      parameters: [{ name: project_id, in: path, required: true, schema: { type: string, format: uuid } }, { name: Idempotency-Key, in: header, required: true, schema: { type: string, minLength: 8, maxLength: 100 } }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/MatchingEvent' } } } }
+      responses: { '204': { description: Idempotent authorized quality event }, '404': { $ref: '#/components/responses/Error' }, '422': { $ref: '#/components/responses/Error' } }
+  /admin/projects/{project_id}/recommendations:
+    post:
+      operationId: putManualRecommendation
+      parameters: [{ name: project_id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/ManualRecommendation' } } } }
+      responses: { '204': { description: Audited platform recommendation }, '403': { $ref: '#/components/responses/Error' }, '404': { $ref: '#/components/responses/Error' } }
+  /admin/projects/{project_id}/recommendations/{freelancer_user_id}:
+    delete:
+      operationId: deleteManualRecommendation
+      parameters: [{ name: project_id, in: path, required: true, schema: { type: string, format: uuid } }, { name: freelancer_user_id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses: { '204': { description: Audited recommendation removal }, '403': { $ref: '#/components/responses/Error' }, '404': { $ref: '#/components/responses/Error' } }
+  /admin/metrics/ai:
+    get:
+      operationId: getAdminAIMatchingMetrics
+      responses: { '200': { description: Thirty-day AI cost/health and matching quality aggregates }, '403': { $ref: '#/components/responses/Error' } }
+  /vacancies:
+    get:
+      operationId: listPublicVacancies
+      parameters:
+        - { name: q, in: query, schema: { type: string, maxLength: 120 } }
+        - { name: category, in: query, schema: { type: string, maxLength: 120 } }
+        - { name: skill, in: query, schema: { type: string, maxLength: 120 } }
+        - { name: employment_type, in: query, schema: { $ref: '#/components/schemas/JobEmploymentType' } }
+        - { name: remote, in: query, schema: { type: boolean } }
+        - { name: location, in: query, schema: { type: string, maxLength: 160 } }
+        - { name: experience, in: query, schema: { $ref: '#/components/schemas/JobExperienceLevel' } }
+        - { name: min_salary_kopecks, in: query, schema: { type: integer, format: int64, minimum: 0 } }
+        - { name: sort, in: query, schema: { type: string, enum: [NEWEST, RELEVANCE] } }
+        - { name: cursor, in: query, schema: { type: string } }
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 50 } }
+      responses: { '200': { description: Public published vacancies }, '400': { $ref: '#/components/responses/Error' }, '429': { $ref: '#/components/responses/Error' } }
+  /vacancies/{id_or_slug}:
+    get:
+      operationId: getPublicVacancy
+      parameters: [{ name: id_or_slug, in: path, required: true, schema: { type: string } }]
+      responses: { '200': { description: Public vacancy with safe employer summary }, '404': { $ref: '#/components/responses/Error' } }
+  /vacancies/{id}/applications:
+    post:
+      operationId: applyToVacancy
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/JobApplicationWrite' } } } }
+      responses: { '201': { description: Unique private vacancy application submitted }, '401': { $ref: '#/components/responses/Error' }, '403': { $ref: '#/components/responses/Error' }, '409': { $ref: '#/components/responses/Error' }, '422': { $ref: '#/components/responses/Error' }, '429': { $ref: '#/components/responses/Error' } }
+  /me/companies:
+    get:
+      operationId: listMyCompanies
+      responses: { '200': { description: Minimal owner companies }, '401': { $ref: '#/components/responses/Error' } }
+    post:
+      operationId: createCompany
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/CompanyWrite' } } } }
+      responses: { '201': { description: Minimal company created }, '401': { $ref: '#/components/responses/Error' }, '403': { $ref: '#/components/responses/Error' }, '409': { $ref: '#/components/responses/Error' }, '422': { $ref: '#/components/responses/Error' } }
+  /me/vacancies:
+    get:
+      operationId: listMyVacancies
+      responses: { '200': { description: Owned vacancy drafts and published items }, '401': { $ref: '#/components/responses/Error' } }
+    post:
+      operationId: createVacancy
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/VacancyWrite' } } } }
+      responses: { '201': { description: Vacancy draft created }, '401': { $ref: '#/components/responses/Error' }, '403': { $ref: '#/components/responses/Error' }, '409': { $ref: '#/components/responses/Error' }, '422': { $ref: '#/components/responses/Error' } }
+  /me/vacancies/{id}:
+    parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+    get:
+      operationId: getMyVacancy
+      responses: { '200': { description: Owned vacancy }, '404': { $ref: '#/components/responses/Error' } }
+    patch:
+      operationId: updateMyDraftVacancy
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/VacancyPatch' } } } }
+      responses: { '200': { description: Draft vacancy updated }, '404': { $ref: '#/components/responses/Error' }, '409': { $ref: '#/components/responses/Error' }, '422': { $ref: '#/components/responses/Error' } }
+    delete:
+      operationId: archiveMyVacancy
+      responses: { '204': { description: Non-active vacancy archived }, '404': { $ref: '#/components/responses/Error' }, '409': { $ref: '#/components/responses/Error' } }
+  /me/vacancies/{id}/publish:
+    post:
+      operationId: publishMyVacancy
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses: { '200': { description: Vacancy published }, '409': { $ref: '#/components/responses/Error' } }
+  /me/vacancies/{id}/close:
+    post:
+      operationId: closeMyVacancy
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses: { '200': { description: Vacancy closed }, '409': { $ref: '#/components/responses/Error' } }
+  /me/job-applications:
+    get:
+      operationId: listMyJobApplications
+      responses: { '200': { description: Applicant-owned status view without employer-private data }, '401': { $ref: '#/components/responses/Error' } }
+  /me/vacancies/{id}/applications:
+    get:
+      operationId: listVacancyApplicants
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses: { '200': { description: Private owner applicant list }, '404': { $ref: '#/components/responses/Error' } }
+  /me/vacancies/{id}/applications/{application_id}/status:
+    post:
+      operationId: updateVacancyApplicationStatus
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }, { name: application_id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody: { required: true, content: { application/json: { schema: { type: object, required: [status], additionalProperties: false, properties: { status: { type: string, enum: [VIEWED, SHORTLISTED, REJECTED, ACCEPTED] } } } } } }
+      responses: { '200': { description: Owner-managed application status }, '404': { $ref: '#/components/responses/Error' }, '409': { $ref: '#/components/responses/Error' } }
+  /admin/vacancies/{id}/moderation:
+    post:
+      operationId: moderateVacancy
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/VacancyModeration' } } } }
+      responses: { '200': { description: Audited moderator visibility decision }, '403': { $ref: '#/components/responses/Error' }, '404': { $ref: '#/components/responses/Error' }, '422': { $ref: '#/components/responses/Error' } }
+  /admin/services/{id}/moderation:
+    post:
+      operationId: moderateService
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/VacancyModeration' } } } }
+      responses: { '200': { description: Audited moderator visibility decision for service or education }, '403': { $ref: '#/components/responses/Error' }, '404': { $ref: '#/components/responses/Error' }, '422': { $ref: '#/components/responses/Error' } }
+  /calculators:
+    get:
+      operationId: listCalculatorDefinitions
+      responses: { '200': { description: Enabled public calculator sections without private pricing rules }, '429': { $ref: '#/components/responses/Error' } }
+  /calculators/{slug}:
+    get:
+      operationId: getCalculatorDefinition
+      parameters: [{ name: slug, in: path, required: true, schema: { type: string, pattern: '^[a-z0-9]+(?:-[a-z0-9]+)*$', maxLength: 160 } }]
+      responses: { '200': { description: Versioned public calculator questions without private pricing rules }, '404': { $ref: '#/components/responses/Error' }, '429': { $ref: '#/components/responses/Error' } }
+  /calculators/{slug}/estimate:
+    post:
+      operationId: estimateCalculator
+      parameters: [{ name: slug, in: path, required: true, schema: { type: string, pattern: '^[a-z0-9]+(?:-[a-z0-9]+)*$', maxLength: 160 } }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/CalculatorEstimateInput' } } } }
+      responses: { '200': { description: Deterministic range and continuity draft token }, '400': { $ref: '#/components/responses/Error' }, '404': { $ref: '#/components/responses/Error' }, '413': { $ref: '#/components/responses/Error' }, '422': { $ref: '#/components/responses/Error' }, '429': { $ref: '#/components/responses/Error' } }
+  /admin/calculators:
+    get:
+      operationId: listAdminCalculators
+      responses: { '200': { description: Latest calculator sections with pricing and visibility }, '403': { $ref: '#/components/responses/Error' } }
+    post:
+      operationId: createAdminCalculator
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/AdminCalculatorInput' } } } }
+      responses: { '201': { description: Audited calculator section creation }, '403': { $ref: '#/components/responses/Error' }, '409': { $ref: '#/components/responses/Error' }, '422': { $ref: '#/components/responses/Error' } }
+  /admin/calculators/{slug}:
+    patch:
+      operationId: updateAdminCalculator
+      parameters: [{ name: slug, in: path, required: true, schema: { type: string, pattern: '^[a-z0-9]+(?:-[a-z0-9]+)*$', maxLength: 160 } }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/AdminCalculatorInput' } } } }
+      responses: { '200': { description: Audited immutable calculator version creation }, '403': { $ref: '#/components/responses/Error' }, '404': { $ref: '#/components/responses/Error' }, '422': { $ref: '#/components/responses/Error' } }
+  /acquisition/events:
+    post:
+      operationId: recordAcquisitionEvent
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/AcquisitionEvent' } } } }
+      responses: { '204': { description: Privacy-safe allowlisted funnel event recorded }, '400': { $ref: '#/components/responses/Error' }, '413': { $ref: '#/components/responses/Error' }, '422': { $ref: '#/components/responses/Error' }, '429': { $ref: '#/components/responses/Error' } }
+  /seo/sitemap:
+    get:
+      operationId: listPublicSitemapItems
+      responses: { '200': { description: Bounded indexable public paths and modification times }, '429': { $ref: '#/components/responses/Error' } }
+  /me/safe-deals:
+    get:
+      operationId: listMySafeDeals
+      parameters: [{ name: project_id, in: query, schema: { type: string, format: uuid } }]
+      responses: { '200': { description: Party-authorized Safe Deals }, '401': { $ref: '#/components/responses/Error' } }
+  /me/safe-deals/{id}:
+    get:
+      operationId: getMySafeDeal
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses: { '200': { description: Private deal, payment, submission, dispute and timeline context }, '404': { $ref: '#/components/responses/Error' } }
+  /me/safe-deals/{id}/{action}:
+    post:
+      operationId: commandMySafeDeal
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }, { name: action, in: path, required: true, schema: { type: string, enum: [fund, start, submit, revision, accept, cancel, disputes] } }, { name: Idempotency-Key, in: header, required: true, schema: { type: string, minLength: 8, maxLength: 160 } }]
+      requestBody: { content: { application/json: { schema: { type: object, maxProperties: 3, additionalProperties: true } } } }
+      responses: { '200': { description: Idempotent role-authorized state command }, '404': { $ref: '#/components/responses/Error' }, '409': { $ref: '#/components/responses/Error' }, '422': { $ref: '#/components/responses/Error' }, '503': { $ref: '#/components/responses/Error' } }
+  /me/safe-deals/disputes/{dispute_id}/evidence:
+    post:
+      operationId: addSafeDealDisputeEvidence
+      parameters: [{ name: dispute_id, in: path, required: true, schema: { type: string, format: uuid } }, { name: Idempotency-Key, in: header, required: true, schema: { type: string, minLength: 8, maxLength: 160 } }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/SafeDealEvidenceInput' } } } }
+      responses: { '201': { description: Party/private evidence appended }, '404': { $ref: '#/components/responses/Error' }, '422': { $ref: '#/components/responses/Error' } }
+  /admin/safe-deals:
+    get:
+      operationId: listAdminSafeDeals
+      responses: { '200': { description: Moderator deal and dispute queue }, '403': { $ref: '#/components/responses/Error' } }
+  /admin/safe-deals/{id}/{action}:
+    post:
+      operationId: commandAdminSafeDeal
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }, { name: action, in: path, required: true, schema: { type: string, enum: [resolve, reconcile] } }, { name: Idempotency-Key, in: header, required: true, schema: { type: string, minLength: 8, maxLength: 160 } }]
+      responses: { '200': { description: Audited resolution or idempotent provider reconciliation }, '403': { $ref: '#/components/responses/Error' }, '409': { $ref: '#/components/responses/Error' }, '503': { $ref: '#/components/responses/Error' } }
+  /payments/provider/sandbox/webhook:
+    post:
+      operationId: sandboxSafeDealWebhook
+      parameters: [{ name: X-Sandbox-Timestamp, in: header, required: true, schema: { type: string } }, { name: X-Sandbox-Signature, in: header, required: true, schema: { type: string } }]
+      responses: { '204': { description: Verified and replay-safe provider event }, '403': { $ref: '#/components/responses/Error' }, '409': { $ref: '#/components/responses/Error' } }
+components:
+  schemas:
+    CompanyWrite:
+      type: object
+      required: [name, slug]
+      additionalProperties: false
+      properties:
+        name: { type: string, minLength: 1, maxLength: 180 }
+        slug: { type: string, minLength: 1, maxLength: 220, pattern: '^[a-z0-9]+(?:-[a-z0-9]+)*$' }
+        website: { type: string, format: uri, maxLength: 2048 }
+        description: { type: string, maxLength: 4000 }
+    JobEmploymentType:
+      type: string
+      enum: [FULL_TIME, PART_TIME, CONTRACT, INTERNSHIP]
+    JobExperienceLevel:
+      type: string
+      enum: [JUNIOR, MIDDLE, SENIOR, LEAD, ANY]
+    VacancyWrite:
+      type: object
+      additionalProperties: false
+      required: [title, slug, description, employment_type, currency, remote]
+      properties:
+        company_id: { type: string, format: uuid, nullable: true }
+        category_id: { type: string, format: uuid, nullable: true }
+        title: { type: string, minLength: 1, maxLength: 200 }
+        slug: { type: string, minLength: 1, maxLength: 240, pattern: '^[a-z0-9]+(?:-[a-z0-9]+)*$' }
+        description: { type: string, minLength: 1, maxLength: 20000 }
+        employment_type: { $ref: '#/components/schemas/JobEmploymentType' }
+        salary_min_kopecks: { type: integer, format: int64, minimum: 1, nullable: true }
+        salary_max_kopecks: { type: integer, format: int64, minimum: 1, nullable: true }
+        currency: { type: string, enum: [RUB] }
+        location: { type: string, maxLength: 160 }
+        remote: { type: boolean }
+        experience_level: { $ref: '#/components/schemas/JobExperienceLevel' }
+        skill_ids: { type: array, uniqueItems: true, maxItems: 30, items: { type: string, format: uuid } }
+    JobApplicationWrite:
+      type: object
+      additionalProperties: false
+      properties:
+        cover_message: { type: string, maxLength: 5000 }
+    VacancyPatch:
+      type: object
+      additionalProperties: false
+      properties:
+        company_id: { type: string, format: uuid, nullable: true }
+        category_id: { type: string, format: uuid, nullable: true }
+        title: { type: string, minLength: 1, maxLength: 200 }
+        slug: { type: string, minLength: 1, maxLength: 240, pattern: '^[a-z0-9]+(?:-[a-z0-9]+)*$' }
+        description: { type: string, minLength: 1, maxLength: 20000 }
+        employment_type: { $ref: '#/components/schemas/JobEmploymentType' }
+        salary_min_kopecks: { type: integer, format: int64, minimum: 1, nullable: true }
+        salary_max_kopecks: { type: integer, format: int64, minimum: 1, nullable: true }
+        currency: { type: string, enum: [RUB] }
+        location: { type: string, maxLength: 160 }
+        remote: { type: boolean }
+        experience_level: { $ref: '#/components/schemas/JobExperienceLevel' }
+        skill_ids: { type: array, uniqueItems: true, maxItems: 30, items: { type: string, format: uuid } }
+    VacancyModeration:
+      type: object
+      required: [action, reason]
+      additionalProperties: false
+      properties:
+        action: { type: string, enum: [HIDE, RESTORE] }
+        reason: { type: string, minLength: 3, maxLength: 1000 }
+    MatchingConstraints:
+      type: object
+      additionalProperties: false
+      properties:
+        require_immediate_availability: { type: boolean, default: false }
+        require_category_match: { type: boolean, default: false }
+        max_minimum_order_kopecks: { type: integer, format: int64, minimum: 0 }
+    MatchingEvent:
+      type: object
+      required: [run_id, freelancer_user_id, event_type]
+      additionalProperties: false
+      properties:
+        run_id: { type: string, format: uuid }
+        freelancer_user_id: { type: string, format: uuid }
+        event_type: { type: string, enum: [IMPRESSION, PROFILE_OPEN, INVITE, SHORTLIST, PROPOSAL, ACCEPTANCE, COMPLETED, REPEAT] }
+    ManualRecommendation:
+      type: object
+      required: [freelancer_user_id, internal_reason]
+      additionalProperties: false
+      properties:
+        freelancer_user_id: { type: string, format: uuid }
+        internal_reason: { type: string, minLength: 3, maxLength: 1000 }
+    ProjectDraftWrite:
+      type: object
+      additionalProperties: false
+      properties:
+        source_type: { type: string, enum: [AI_BRIEF, IMPORT, COMMERCIAL_OFFER, CALCULATOR, MANUAL] }
+        raw_input: { type: object, maxProperties: 20, additionalProperties: true }
+        normalized_data: { type: object, maxProperties: 30, additionalProperties: true }
+    AcquisitionAttribution:
+      type: object
+      additionalProperties: false
+      properties:
+        anonymous_id: { type: string, format: uuid }
+        landing_path: { type: string, maxLength: 500, pattern: '^/' }
+        utm_source: { type: string, maxLength: 200 }
+        utm_medium: { type: string, maxLength: 200 }
+        utm_campaign: { type: string, maxLength: 200 }
+        utm_content: { type: string, maxLength: 200 }
+        referral_code: { type: string, maxLength: 200 }
+    CalculatorEstimateInput:
+      type: object
+      required: [answers, attribution]
+      additionalProperties: false
+      properties:
+        answers: { type: object, maxProperties: 20, additionalProperties: true }
+        attribution: { $ref: '#/components/schemas/AcquisitionAttribution' }
+    CalculatorOption:
+      type: object
+      required: [value, label]
+      additionalProperties: false
+      properties:
+        value: { type: string, pattern: '^[a-z][a-z0-9_]{0,63}$' }
+        label: { type: string, minLength: 1, maxLength: 200 }
+    CalculatorQuestion:
+      type: object
+      required: [key, label, type, required]
+      additionalProperties: false
+      properties:
+        key: { type: string, pattern: '^[a-z][a-z0-9_]{0,63}$' }
+        label: { type: string, minLength: 1, maxLength: 200 }
+        type: { type: string, enum: [SELECT, NUMBER, BOOLEAN] }
+        required: { type: boolean }
+        min: { type: integer, minimum: 0 }
+        max: { type: integer, minimum: 0 }
+        options: { type: array, maxItems: 30, items: { $ref: '#/components/schemas/CalculatorOption' } }
+    CalculatorPricing:
+      type: object
+      required: [baseline_min_kopecks, baseline_max_kopecks, duration_min_days, duration_max_days, option_basis_points, number_basis_points, boolean_basis_points, category_slug, skill_slugs, assumptions]
+      additionalProperties: false
+      properties:
+        baseline_min_kopecks: { type: integer, format: int64, minimum: 100 }
+        baseline_max_kopecks: { type: integer, format: int64, minimum: 100, maximum: 10000000000 }
+        duration_min_days: { type: integer, minimum: 1, maximum: 3650 }
+        duration_max_days: { type: integer, minimum: 1, maximum: 3650 }
+        option_basis_points: { type: object, additionalProperties: { type: object, additionalProperties: { type: integer, minimum: 0, maximum: 50000 } } }
+        number_basis_points: { type: object, additionalProperties: { type: integer, minimum: 0, maximum: 10000 } }
+        boolean_basis_points: { type: object, additionalProperties: { type: integer, minimum: 0, maximum: 50000 } }
+        category_slug: { type: string, maxLength: 160 }
+        skill_slugs: { type: array, maxItems: 30, items: { type: string, maxLength: 160 } }
+        assumptions: { type: array, maxItems: 20, items: { type: string, maxLength: 500 } }
+    AdminCalculatorInput:
+      type: object
+      required: [slug, title, intro, enabled, questions, pricing, reason]
+      additionalProperties: false
+      properties:
+        slug: { type: string, pattern: '^[a-z0-9]+(?:-[a-z0-9]+)*$', maxLength: 160 }
+        title: { type: string, minLength: 1, maxLength: 220 }
+        intro: { type: string, minLength: 1, maxLength: 600 }
+        enabled: { type: boolean }
+        questions: { type: array, minItems: 1, maxItems: 20, items: { $ref: '#/components/schemas/CalculatorQuestion' } }
+        pricing: { $ref: '#/components/schemas/CalculatorPricing' }
+        reason: { type: string, minLength: 3, maxLength: 500 }
+    AcquisitionEvent:
+      allOf:
+        - { $ref: '#/components/schemas/AcquisitionAttribution' }
+        - type: object
+          required: [event_type]
+          properties:
+            event_type: { type: string, enum: [LANDING_VIEW, HOMEPAGE_TASK_STARTED, GUEST_PROJECT_ANALYSIS_COMPLETED, CALCULATOR_STARTED, CALCULATOR_COMPLETED, COMMERCIAL_OFFER_ANALYZED, REGISTRATION_COMPLETED, PROJECT_DRAFT_CLAIMED, PROJECT_PUBLISHED, PROPOSAL_RECEIVED, PROPOSAL_ACCEPTED, PROJECT_COMPLETED] }
+            metadata: { type: object, maxProperties: 5, additionalProperties: { type: string, maxLength: 160 } }
+    SafeDealEvidenceInput:
+      type: object
+      required: [kind, body]
+      additionalProperties: false
+      properties:
+        kind: { type: string, enum: [COMMENT, MESSAGE_REFERENCE, SUBMISSION_REFERENCE] }
+        body: { type: string, minLength: 1, maxLength: 5000 }
+        reference_id: { type: string, format: uuid }
+    AIProjectInput:
+      type: object
+      required: [draft_token]
+      additionalProperties: false
+      properties:
+        draft_token: { type: string, minLength: 64, maxLength: 64 }
+        text: { type: string, minLength: 3, maxLength: 50000 }
+        goal: { type: string, maxLength: 2000 }
+        materials:
+          type: array
+          minItems: 1
+          maxItems: 10
+          items:
+            type: object
+            required: [text]
+            additionalProperties: false
+            properties: { name: { type: string, maxLength: 200 }, text: { type: string, minLength: 3, maxLength: 50000 } }
+        category_slug: { type: string, maxLength: 120 }
+        skill_slugs: { type: array, maxItems: 30, items: { type: string, maxLength: 120 } }
+        features: { type: array, maxItems: 30, items: { type: string, maxLength: 160 } }
+    InviteCreate:
+      type: object
+      required: [type]
+      additionalProperties: false
+      properties:
+        type: { type: string, enum: [CUSTOMER, FREELANCER, PROJECT] }
+        project_id: { type: string, format: uuid }
+        intended_email: { type: string, format: email, maxLength: 320 }
+    ReferralRuleWrite:
+      type: object
+      required: [code, event_type, beneficiary, reward_type, reward_value, reward_unit, enabled, config]
+      additionalProperties: false
+      properties:
+        code: { type: string, pattern: '^[A-Z0-9_]+$', maxLength: 100 }
+        event_type: { type: string, enum: [INVITE_ACCEPTED] }
+        beneficiary: { type: string, enum: [INVITER, INVITED] }
+        reward_type: { type: string, enum: [COMMISSION_DISCOUNT, BONUS, FIXED_REWARD, PERCENT_REWARD] }
+        reward_value: { type: integer, format: int64, minimum: 1 }
+        reward_unit: { type: string, enum: [KOPECKS, BASIS_POINTS, COUNT, CREDITS] }
+        max_uses: { type: integer, minimum: 1 }
+        starts_at: { type: string, format: date-time }
+        ends_at: { type: string, format: date-time }
+        enabled: { type: boolean }
+        config: { type: object }
+    TeamMemberWrite:
+      type: object
+      additionalProperties: false
+      properties:
+        label: { type: string, maxLength: 120 }
+        notes: { type: string, maxLength: 2000 }
+    ConversationCreate:
+      type: object
+      additionalProperties: false
+      properties:
+        participant_user_id: { type: string, format: uuid }
+        project_id: { type: string, format: uuid }
+    MessageCreate:
+      type: object
+      required: [client_message_id, type]
+      additionalProperties: false
+      properties:
+        client_message_id: { type: string, format: uuid }
+        type: { type: string, enum: [TEXT, IMAGE, FILE] }
+        body: { type: string, maxLength: 10000 }
+        reply_to_message_id: { type: string, format: uuid }
+        reply_quote: { type: string, maxLength: 1000 }
+        media_ids: { type: array, maxItems: 5, uniqueItems: true, items: { type: string, format: uuid } }
+    CategoryWrite:
+      type: object
+      required: [slug, name, sort_order, is_active]
+      additionalProperties: false
+      properties:
+        parent_id: { type: string, format: uuid, nullable: true }
+        slug: { type: string, minLength: 1, maxLength: 120, pattern: '^[a-z0-9]+(?:-[a-z0-9]+)*$' }
+        name: { type: string, minLength: 1, maxLength: 160 }
+        description: { type: string, maxLength: 2000 }
+        sort_order: { type: integer, minimum: 0, maximum: 10000 }
+        is_active: { type: boolean }
+    SkillWrite:
+      type: object
+      required: [slug, name, is_active]
+      additionalProperties: false
+      properties:
+        slug: { type: string, minLength: 1, maxLength: 120, pattern: '^[a-z0-9]+(?:-[a-z0-9]+)*$' }
+        name: { type: string, minLength: 1, maxLength: 160 }
+        is_active: { type: boolean }
+    ProposalWrite:
+      type: object
+      required: [message, currency]
+      additionalProperties: false
+      properties:
+        message: { type: string, minLength: 1, maxLength: 5000 }
+        price_kopecks: { type: integer, format: int64, minimum: 1, nullable: true }
+        currency: { type: string, enum: [RUB] }
+        delivery_days: { type: integer, minimum: 1, maximum: 3650, nullable: true }
+    Health:
+      type: object
+      required: [status]
+      properties: { status: { type: string, example: ok } }
+    RegisterRequest:
+      type: object
+      required: [email, password, display_name, account_type]
+      additionalProperties: false
+      properties:
+        email: { type: string, format: email }
+        password: { type: string, minLength: 10, maxLength: 128, format: password }
+        display_name: { type: string, minLength: 1, maxLength: 120 }
+        account_type: { type: string, enum: [CUSTOMER, FREELANCER] }
+    ProfessionalProfileUpdate:
+      type: object
+      required: [availability, profile_visibility]
+      additionalProperties: false
+      properties:
+        professional_title: { type: string, maxLength: 160 }
+        bio: { type: string, maxLength: 5000 }
+        location_text: { type: string, maxLength: 160 }
+        country_code: { type: string, pattern: '^[A-Z]{2}$' }
+        experience_years: { type: integer, minimum: 0, maximum: 80, nullable: true }
+        hourly_rate_kopecks: { type: integer, format: int64, minimum: 0, nullable: true }
+        minimum_order_kopecks: { type: integer, format: int64, minimum: 0, nullable: true }
+        availability: { type: string, enum: [AVAILABLE, PARTIALLY_BUSY, BUSY, UNAVAILABLE] }
+        profile_visibility: { type: string, enum: [PUBLIC, PRIVATE] }
+        categories:
+          type: array
+          maxItems: 10
+          items: { $ref: '#/components/schemas/ProfileCategorySelection' }
+        skills:
+          type: array
+          maxItems: 50
+          items: { $ref: '#/components/schemas/ProfileSkillSelection' }
+        languages:
+          type: array
+          maxItems: 20
+          items: { $ref: '#/components/schemas/ProfileLanguage' }
+    ExternalReputationCreate:
+      type: object
+      required: [platform, profile_url]
+      additionalProperties: false
+      properties:
+        platform: { type: string, enum: [KWORK, FL_RU, GITHUB, BEHANCE, DRIBBBLE, HABR_CAREER, OTHER] }
+        profile_url: { type: string, format: uri, maxLength: 2048 }
+        external_username: { type: string, maxLength: 160 }
+    ExternalReputationPatch:
+      type: object
+      minProperties: 1
+      additionalProperties: false
+      properties:
+        platform: { type: string, enum: [KWORK, FL_RU, GITHUB, BEHANCE, DRIBBBLE, HABR_CAREER, OTHER] }
+        profile_url: { type: string, format: uri, maxLength: 2048 }
+        external_username: { type: string, maxLength: 160 }
+    PublicExternalReputation:
+      type: object
+      required: [platform, display_name, profile_url, verified]
+      additionalProperties: false
+      properties:
+        platform: { type: string }
+        display_name: { type: string }
+        profile_url: { type: string, format: uri }
+        verified: { type: boolean, enum: [true] }
+        rating: { type: number, nullable: true }
+        reviews_count: { type: integer, minimum: 0, nullable: true }
+        completed_orders_count: { type: integer, minimum: 0, nullable: true }
+        account_since: { type: string, format: date, nullable: true }
+        verified_at: { type: string, format: date-time, nullable: true }
+    ReputationVerificationStart:
+      type: object
+      required: [method]
+      additionalProperties: false
+      properties:
+        method: { type: string, enum: [PROFILE_CODE, MANUAL] }
+        evidence: { type: object, maxProperties: 10, additionalProperties: true }
+    ReputationDecision:
+      type: object
+      additionalProperties: false
+      properties:
+        reason_code: { type: string, enum: [PROFILE_NOT_ACCESSIBLE, OWNERSHIP_NOT_PROVEN, METRICS_NOT_VERIFIABLE, PROFILE_MISMATCH, INVALID_EVIDENCE, OTHER] }
+        note: { type: string, maxLength: 2000 }
+    ReviewCreate:
+      type: object
+      required: [rating_overall, dimensions]
+      additionalProperties: false
+      properties:
+        rating_overall: { type: integer, minimum: 1, maximum: 5 }
+        would_work_again: { type: boolean, nullable: true }
+        text: { type: string, maxLength: 5000 }
+        dimensions:
+          type: object
+          maxProperties: 4
+          additionalProperties: { type: integer, minimum: 1, maximum: 5 }
+    NativeTrustStats:
+      type: object
+      required: [reviews_count, completed_projects_count]
+      additionalProperties: false
+      properties:
+        native_rating: { type: number, nullable: true }
+        reviews_count: { type: integer, minimum: 0 }
+        completed_projects_count: { type: integer, minimum: 0 }
+        recommendation_rate: { type: number, minimum: 0, maximum: 100, nullable: true }
+        updated_at: { type: string, format: date-time }
+    ReviewReport:
+      type: object
+      required: [reason_code]
+      additionalProperties: false
+      properties:
+        reason_code: { type: string, enum: [HARASSMENT_ABUSE, SPAM, PERSONAL_DATA, IRRELEVANT, MANIPULATION_CONFLICT, OTHER] }
+        description: { type: string, maxLength: 2000 }
+    ModerationReason:
+      type: object
+      required: [reason]
+      additionalProperties: false
+      properties: { reason: { type: string, minLength: 1, maxLength: 1000 } }
+    ProfileCategorySelection:
+      type: object
+      required: [id]
+      additionalProperties: false
+      properties:
+        id: { type: string, format: uuid }
+        is_primary: { type: boolean, default: false }
+    ProfileCategoriesUpdate:
+      type: object
+      required: [categories]
+      additionalProperties: false
+      properties:
+        categories:
+          type: array
+          maxItems: 10
+          items: { $ref: '#/components/schemas/ProfileCategorySelection' }
+    ProfileSkillSelection:
+      type: object
+      required: [id]
+      additionalProperties: false
+      properties:
+        id: { type: string, format: uuid }
+        level: { type: string, enum: [BEGINNER, INTERMEDIATE, ADVANCED, EXPERT] }
+        years: { type: integer, minimum: 0, maximum: 80 }
+        is_featured: { type: boolean, default: false }
+    ProfileSkillsUpdate:
+      type: object
+      required: [skills]
+      additionalProperties: false
+      properties:
+        skills:
+          type: array
+          maxItems: 50
+          items: { $ref: '#/components/schemas/ProfileSkillSelection' }
+    ProfileLanguage:
+      type: object
+      required: [code, level]
+      additionalProperties: false
+      properties:
+        code: { type: string, minLength: 2, maxLength: 10 }
+        level: { type: string, enum: [BASIC, CONVERSATIONAL, FLUENT, NATIVE] }
+    ProfileLanguagesUpdate:
+      type: object
+      required: [languages]
+      additionalProperties: false
+      properties:
+        languages:
+          type: array
+          maxItems: 20
+          items: { $ref: '#/components/schemas/ProfileLanguage' }
+    PortfolioWriteRequest:
+      type: object
+      required: [title, slug, visibility]
+      additionalProperties: false
+      properties:
+        title: { type: string, minLength: 1, maxLength: 180 }
+        slug: { type: string, minLength: 1, maxLength: 220, pattern: '^[a-z0-9]+(?:-[a-z0-9]+)*$' }
+        description: { type: string, maxLength: 5000 }
+        external_url: { type: string, format: uri, maxLength: 2048 }
+        price_min_kopecks: { type: integer, format: int64, minimum: 0, nullable: true }
+        price_max_kopecks: { type: integer, format: int64, minimum: 0, nullable: true }
+        completed_on: { type: string, format: date }
+        visibility: { type: string, enum: [PUBLIC, PRIVATE] }
+        sort_order: { type: integer, minimum: 0, maximum: 10000, default: 0 }
+        category_ids: { type: array, maxItems: 10, uniqueItems: true, items: { type: string, format: uuid } }
+        skill_ids: { type: array, maxItems: 50, uniqueItems: true, items: { type: string, format: uuid } }
+        media_object_ids: { type: array, maxItems: 20, uniqueItems: true, items: { type: string, format: uuid } }
+    PortfolioMediaAttachRequest:
+      type: object
+      required: [media_object_id]
+      additionalProperties: false
+      properties:
+        media_object_id: { type: string, format: uuid }
+        sort_order: { type: integer, minimum: 0, maximum: 10000, default: 0 }
+    UploadPresignRequest:
+      type: object
+      required: [purpose, filename, mime_type, size_bytes]
+      additionalProperties: false
+      properties:
+        purpose: { type: string, enum: [PORTFOLIO, SERVICE, PROJECT, CHAT, AVATAR] }
+        filename: { type: string, minLength: 1, maxLength: 255 }
+        mime_type: { type: string, enum: [image/jpeg, image/png, image/webp, application/pdf] }
+        size_bytes: { type: integer, format: int64, minimum: 1, maximum: 20971520 }
+    MediaObject:
+      type: object
+      required: [id, purpose, original_filename, mime_type, size_bytes, scan_status, created_at, updated_at]
+      properties:
+        id: { type: string, format: uuid }
+        purpose: { type: string, enum: [PORTFOLIO, SERVICE, PROJECT, CHAT, AVATAR] }
+        original_filename: { type: string }
+        mime_type: { type: string }
+        size_bytes: { type: integer, format: int64 }
+        scan_status: { type: string, enum: [PENDING, CLEAN, INFECTED, FAILED] }
+        uploaded_at: { type: string, format: date-time }
+        download_url: { type: string, format: uri }
+        expires_at: { type: string, format: date-time }
+    SiteSettings:
+      type: object
+      required: [project_name, project_description, support_email, support_phone, legal_company_name, footer_copyright, primary_button_color, button_hover_color, green_heading_color, bright_blue_color, heading_color, body_text_color, page_background_color]
+      additionalProperties: false
+      properties:
+        project_name: { type: string }
+        project_description: { type: string }
+        support_email: { type: string }
+        support_phone: { type: string }
+        legal_company_name: { type: string }
+        footer_copyright: { type: string }
+        primary_button_color: { type: string, pattern: '^#[0-9A-Fa-f]{6}$' }
+        button_hover_color: { type: string, pattern: '^#[0-9A-Fa-f]{6}$' }
+        green_heading_color: { type: string, pattern: '^#[0-9A-Fa-f]{6}$' }
+        bright_blue_color: { type: string, pattern: '^#[0-9A-Fa-f]{6}$' }
+        heading_color: { type: string, pattern: '^#[0-9A-Fa-f]{6}$' }
+        body_text_color: { type: string, pattern: '^#[0-9A-Fa-f]{6}$' }
+        page_background_color: { type: string, pattern: '^#[0-9A-Fa-f]{6}$' }
+    ServiceMoney:
+      type: object
+      required: [amount_kopecks, currency]
+      additionalProperties: false
+      properties:
+        amount_kopecks: { type: integer, format: int64, minimum: 1 }
+        currency: { type: string, enum: [RUB] }
+    EducationServiceDetails:
+      type: object
+      required: [format]
+      additionalProperties: false
+      properties:
+        format: { type: string, enum: [ONLINE, OFFLINE, ASYNC, HYBRID] }
+        duration_minutes: { type: integer, minimum: 15, maximum: 10080 }
+        sessions_count: { type: integer, minimum: 1, maximum: 365 }
+        audience_type: { type: string, enum: [INDIVIDUAL, GROUP, BOTH] }
+        group_size_max: { type: integer, minimum: 2, maximum: 1000 }
+    ServiceCreateRequest:
+      type: object
+      required: [category_id, service_type, title, slug, description, price_type, visibility]
+      additionalProperties: false
+      properties:
+        category_id: { type: string, format: uuid }
+        service_type: { type: string, enum: [PROFESSIONAL_SERVICE, CONSULTATION, EDUCATION, MENTORING] }
+        title: { type: string, minLength: 1, maxLength: 180 }
+        slug: { type: string, minLength: 1, maxLength: 220, pattern: '^[a-z0-9]+(?:-[a-z0-9]+)*$' }
+        short_description: { type: string, maxLength: 320 }
+        description: { type: string, minLength: 1, maxLength: 10000 }
+        price_type: { type: string, enum: [FIXED, FROM, HOURLY, NEGOTIABLE] }
+        price_from: { $ref: '#/components/schemas/ServiceMoney' }
+        delivery_days: { type: integer, minimum: 1, maximum: 365 }
+        included_revisions: { type: integer, minimum: 0, maximum: 100 }
+        visibility: { type: string, enum: [PUBLIC, PRIVATE] }
+        skill_ids: { type: array, maxItems: 30, uniqueItems: true, items: { type: string, format: uuid } }
+        media_object_ids: { type: array, maxItems: 12, uniqueItems: true, items: { type: string, format: uuid } }
+        education_details: { $ref: '#/components/schemas/EducationServiceDetails' }
+    ServicePatchRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        category_id: { type: string, format: uuid }
+        service_type: { type: string, enum: [PROFESSIONAL_SERVICE, CONSULTATION, EDUCATION, MENTORING] }
+        title: { type: string, minLength: 1, maxLength: 180 }
+        slug: { type: string, minLength: 1, maxLength: 220, pattern: '^[a-z0-9]+(?:-[a-z0-9]+)*$' }
+        short_description: { type: string, maxLength: 320 }
+        description: { type: string, minLength: 1, maxLength: 10000 }
+        price_type: { type: string, enum: [FIXED, FROM, HOURLY, NEGOTIABLE] }
+        price_from: { $ref: '#/components/schemas/ServiceMoney' }
+        delivery_days: { type: integer, minimum: 1, maximum: 365 }
+        included_revisions: { type: integer, minimum: 0, maximum: 100 }
+        visibility: { type: string, enum: [PUBLIC, PRIVATE] }
+        skill_ids: { type: array, maxItems: 30, uniqueItems: true, items: { type: string, format: uuid } }
+        media_object_ids: { type: array, maxItems: 12, uniqueItems: true, items: { type: string, format: uuid } }
+        education_details: { $ref: '#/components/schemas/EducationServiceDetails' }
+    ProjectBudgetType:
+      type: string
+      enum: [FIXED, RANGE, NEGOTIABLE, HOURLY]
+    ProjectExperienceLevel:
+      type: string
+      enum: [BEGINNER, INTERMEDIATE, ADVANCED, EXPERT]
+    ProjectBudget:
+      type: object
+      required: [type, currency]
+      additionalProperties: false
+      properties:
+        type: { $ref: '#/components/schemas/ProjectBudgetType' }
+        min_kopecks: { type: integer, format: int64, minimum: 1 }
+        max_kopecks: { type: integer, format: int64, minimum: 1 }
+        currency: { type: string, enum: [RUB] }
+    ProjectCreateRequest:
+      type: object
+      required: [title, slug, description, budget, visibility]
+      additionalProperties: false
+      properties:
+        category_id: { type: string, format: uuid }
+        title: { type: string, minLength: 1, maxLength: 200 }
+        slug: { type: string, minLength: 1, maxLength: 240, pattern: '^[a-z0-9]+(?:-[a-z0-9]+)*$' }
+        description: { type: string, minLength: 1, maxLength: 15000 }
+        budget: { $ref: '#/components/schemas/ProjectBudget' }
+        deadline_at: { type: string, format: date-time }
+        experience_level: { $ref: '#/components/schemas/ProjectExperienceLevel' }
+        visibility: { type: string, enum: [PUBLIC, PRIVATE] }
+        skill_ids: { type: array, maxItems: 30, uniqueItems: true, items: { type: string, format: uuid } }
+        media_ids: { type: array, maxItems: 12, uniqueItems: true, items: { type: string, format: uuid } }
+        source_draft_token: { type: string, minLength: 64, maxLength: 64 }
+    ProjectPatchRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        category_id: { type: string, format: uuid, nullable: true }
+        title: { type: string, minLength: 1, maxLength: 200 }
+        slug: { type: string, minLength: 1, maxLength: 240, pattern: '^[a-z0-9]+(?:-[a-z0-9]+)*$' }
+        description: { type: string, minLength: 1, maxLength: 15000 }
+        budget: { $ref: '#/components/schemas/ProjectBudget' }
+        deadline_at: { type: string, format: date-time }
+        experience_level: { $ref: '#/components/schemas/ProjectExperienceLevel' }
+        visibility: { type: string, enum: [PUBLIC, PRIVATE] }
+        skill_ids: { type: array, maxItems: 30, uniqueItems: true, items: { type: string, format: uuid } }
+        media_ids: { type: array, maxItems: 12, uniqueItems: true, items: { type: string, format: uuid } }
+    Error:
+      type: object
+      properties:
+        error: { type: object }
+  responses:
+    Error:
+      description: API error
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }

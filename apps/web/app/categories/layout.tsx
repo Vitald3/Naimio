@@ -1,0 +1,1 @@
+import type { ReactNode } from "react";import { publicMetadata } from "../seo";export const metadata=publicMetadata("Категории и навыки","Направления работ, специалисты, услуги и открытые проекты по категориям.","/categories");export default function Layout({children}:{children:ReactNode}){return children}

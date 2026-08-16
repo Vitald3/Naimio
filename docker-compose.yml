@@ -1,0 +1,231 @@
+services:
+  nginx:
+    build: ./infra/nginx
+    depends_on:
+      web: { condition: service_healthy }
+      api: { condition: service_healthy }
+    ports: ["${BIND_ADDRESS:-0.0.0.0}:8088:80"]
+    networks: [app]
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+  web:
+    build: ./apps/web
+    environment:
+      API_BASE_URL: http://api:8080
+      LOCAL_IP_ADDRESS: ${local_ip_address:-${LOCAL_IP_ADDRESS:-}}
+    networks: [app]
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+  api:
+    build: ./apps/api
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+    environment:
+      APP_ENV: ${APP_ENV:-development}
+      LOCAL_IP_ADDRESS: ${local_ip_address:-${LOCAL_IP_ADDRESS:-}}
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-}
+      DATABASE_URL: postgres://freelance:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}@postgres:5432/freelance?sslmode=disable
+      REDIS_URL: redis://:${REDIS_PASSWORD:?set REDIS_PASSWORD}@redis:6379/0
+      OBJECT_STORAGE_ENDPOINT: ${OBJECT_STORAGE_ENDPOINT:-}
+      OBJECT_STORAGE_REGION: ${OBJECT_STORAGE_REGION:-}
+      OBJECT_STORAGE_BUCKET: ${OBJECT_STORAGE_BUCKET:-}
+      OBJECT_STORAGE_ACCESS_KEY: ${OBJECT_STORAGE_ACCESS_KEY:-}
+      OBJECT_STORAGE_SECRET_KEY: ${OBJECT_STORAGE_SECRET_KEY:-}
+      OBJECT_STORAGE_SESSION_TOKEN: ${OBJECT_STORAGE_SESSION_TOKEN:-}
+      AI_ESTIMATE_BASELINES_JSON: ${AI_ESTIMATE_BASELINES_JSON:-}
+      AI_PROJECT_BRIEF_PROVIDER: ${AI_PROJECT_BRIEF_PROVIDER:-deterministic}
+      AI_PROJECT_BRIEF_MODEL: ${AI_PROJECT_BRIEF_MODEL:-rules-v1}
+      AI_PROJECT_IMPORT_PROVIDER: ${AI_PROJECT_IMPORT_PROVIDER:-deterministic}
+      AI_PROJECT_IMPORT_MODEL: ${AI_PROJECT_IMPORT_MODEL:-rules-v1}
+      AI_ESTIMATE_PROVIDER: ${AI_ESTIMATE_PROVIDER:-deterministic}
+      AI_ESTIMATE_MODEL: ${AI_ESTIMATE_MODEL:-rules-v1}
+      AI_OFFER_ANALYSIS_PROVIDER: ${AI_OFFER_ANALYSIS_PROVIDER:-deterministic}
+      AI_OFFER_ANALYSIS_MODEL: ${AI_OFFER_ANALYSIS_MODEL:-rules-v1}
+      AI_TAXONOMY_SUGGESTION_PROVIDER: ${AI_TAXONOMY_SUGGESTION_PROVIDER:-deterministic}
+      AI_TAXONOMY_SUGGESTION_MODEL: ${AI_TAXONOMY_SUGGESTION_MODEL:-rules-v1}
+      AI_MATCH_RERANK_ENABLED: ${AI_MATCH_RERANK_ENABLED:-false}
+      AI_MATCH_RERANK_PROVIDER: ${AI_MATCH_RERANK_PROVIDER:-deterministic}
+      AI_MATCH_RERANK_MODEL: ${AI_MATCH_RERANK_MODEL:-rules-v1}
+      MATCHING_RETRIEVAL_LIMIT: ${MATCHING_RETRIEVAL_LIMIT:-100}
+      MATCHING_SHORTLIST_LIMIT: ${MATCHING_SHORTLIST_LIMIT:-20}
+      MATCHING_WEIGHTS_JSON: ${MATCHING_WEIGHTS_JSON:-}
+      SAFE_DEAL_PROVIDER: ${SAFE_DEAL_PROVIDER:-sandbox}
+      SAFE_DEAL_WEBHOOK_SECRET: ${SAFE_DEAL_WEBHOOK_SECRET:-development-sandbox-secret-only}
+      PAYMENT_CONFIG_MASTER_KEY: ${PAYMENT_CONFIG_MASTER_KEY:-development-payment-config-key-change-me}
+      # Phase 11 PSP credentials stay deployment-owned; Compose passes them to
+      # the API only. They are never exposed to the web or worker containers.
+      YOOKASSA_SHOP_ID: ${YOOKASSA_SHOP_ID:-}
+      YOOKASSA_SECRET_KEY: ${YOOKASSA_SECRET_KEY:-}
+      YOOKASSA_BASE_URL: ${YOOKASSA_BASE_URL:-}
+      TBANK_TERMINAL_KEY: ${TBANK_TERMINAL_KEY:-}
+      TBANK_PASSWORD: ${TBANK_PASSWORD:-}
+      TBANK_BASE_URL: ${TBANK_BASE_URL:-}
+      TBANK_NOMINAL_BEARER_TOKEN: ${TBANK_NOMINAL_BEARER_TOKEN:-}
+      TBANK_NOMINAL_ACCOUNT_NUMBER: ${TBANK_NOMINAL_ACCOUNT_NUMBER:-}
+      TBANK_NOMINAL_BASE_URL: ${TBANK_NOMINAL_BASE_URL:-}
+      TBANK_NOMINAL_CLIENT_CERT_FILE: ${TBANK_NOMINAL_CLIENT_CERT_FILE:-}
+      TBANK_NOMINAL_CLIENT_KEY_FILE: ${TBANK_NOMINAL_CLIENT_KEY_FILE:-}
+      CLOUDPAYMENTS_PUBLIC_ID: ${CLOUDPAYMENTS_PUBLIC_ID:-}
+      CLOUDPAYMENTS_API_SECRET: ${CLOUDPAYMENTS_API_SECRET:-}
+      CLOUDPAYMENTS_BASE_URL: ${CLOUDPAYMENTS_BASE_URL:-}
+      YANDEX_PAY_API_KEY: ${YANDEX_PAY_API_KEY:-}
+      YANDEX_PAY_MERCHANT_ID: ${YANDEX_PAY_MERCHANT_ID:-}
+      YANDEX_PAY_JWKS_URL: ${YANDEX_PAY_JWKS_URL:-}
+      YANDEX_PAY_BASE_URL: ${YANDEX_PAY_BASE_URL:-}
+      ROBOKASSA_LOGIN: ${ROBOKASSA_LOGIN:-}
+      ROBOKASSA_PASSWORD1: ${ROBOKASSA_PASSWORD1:-}
+      ROBOKASSA_PASSWORD2: ${ROBOKASSA_PASSWORD2:-}
+      ROBOKASSA_PASSWORD3: ${ROBOKASSA_PASSWORD3:-}
+      ROBOKASSA_BASE_URL: ${ROBOKASSA_BASE_URL:-}
+      DEV_MEDIA_ROOT: /var/lib/naimio-media
+      ROBOKASSA_SERVICES_BASE_URL: ${ROBOKASSA_SERVICES_BASE_URL:-}
+      PAYMENT_RECONCILIATION_TOKEN: ${PAYMENT_RECONCILIATION_TOKEN:-}
+      PRO_RENEWAL_TOKEN: ${PRO_RENEWAL_TOKEN:-}
+      RATE_LIMIT_PUBLIC_READ_LIMIT: ${RATE_LIMIT_PUBLIC_READ_LIMIT:-600}
+      RATE_LIMIT_PUBLIC_READ_WINDOW: ${RATE_LIMIT_PUBLIC_READ_WINDOW:-1m}
+    volumes:
+      - naimio_media:/var/lib/naimio-media
+    networks: [app, data]
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/health/ready"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+  worker:
+    build: ./worker
+    depends_on:
+      postgres: { condition: service_healthy }
+    environment:
+      APP_ENV: ${APP_ENV:-development}
+      LOCAL_IP_ADDRESS: ${local_ip_address:-${LOCAL_IP_ADDRESS:-}}
+      DATABASE_URL: postgres://freelance:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}@postgres:5432/freelance?sslmode=disable
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-}
+      SMTP_ADDRESS: ${SMTP_ADDRESS:?set SMTP_ADDRESS}
+      SMTP_USERNAME: ${SMTP_USERNAME:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_FROM: ${SMTP_FROM:?set SMTP_FROM}
+      DB_MAX_OPEN_CONNS: ${DB_MAX_OPEN_CONNS:-10}
+      DB_MAX_IDLE_CONNS: ${DB_MAX_IDLE_CONNS:-3}
+      PAYMENT_RECONCILIATION_URL: ${PAYMENT_RECONCILIATION_URL:-http://api:8080/api/v1/internal/payments/reconcile}
+      PAYMENT_RECONCILIATION_TOKEN: ${PAYMENT_RECONCILIATION_TOKEN:-}
+      PAYMENT_RECONCILIATION_INTERVAL: ${PAYMENT_RECONCILIATION_INTERVAL:-1m}
+      PAYMENT_RECONCILIATION_BATCH: ${PAYMENT_RECONCILIATION_BATCH:-100}
+      PRO_RENEWAL_URL: ${PRO_RENEWAL_URL:-http://api:8080/api/v1/internal/payments/pro-renew}
+      PRO_RENEWAL_TOKEN: ${PRO_RENEWAL_TOKEN:-}
+      PRO_RENEWAL_INTERVAL: ${PRO_RENEWAL_INTERVAL:-5m}
+      PRO_RENEWAL_BATCH: ${PRO_RENEWAL_BATCH:-50}
+    networks: [data]
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8081/health/ready"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: freelance
+      POSTGRES_USER: freelance
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+      TZ: UTC
+    networks: [data]
+    volumes: ["postgres_data:/var/lib/postgresql/data"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U freelance -d freelance"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+  redis:
+    image: redis:7-alpine
+    networks: [data]
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?set REDIS_PASSWORD}
+    command: ["sh", "-c", "exec redis-server --maxmemory-policy allkeys-lru --requirepass \"$$REDIS_PASSWORD\""]
+    healthcheck:
+      test: ["CMD-SHELL", "REDISCLI_AUTH=\"$$REDIS_PASSWORD\" redis-cli ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+  migrate:
+    image: postgres:16-alpine
+    profiles: [migration]
+    depends_on:
+      postgres: { condition: service_healthy }
+    environment:
+      PGHOST: postgres
+      PGUSER: freelance
+      PGDATABASE: freelance
+      PGPASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+      MIGRATIONS_DIR: /migrations
+    volumes:
+      - ./db/migrations:/migrations:ro
+      - ./scripts/migrate.sh:/migrate.sh:ro
+    entrypoint: ["/migrate.sh"]
+    networks: [data]
+  dev-seed:
+    build: ./apps/api
+    profiles: [seed]
+    depends_on:
+      postgres: { condition: service_healthy }
+    environment:
+      APP_ENV: development
+      DATABASE_URL: postgres://freelance:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}@postgres:5432/freelance?sslmode=disable
+    entrypoint: ["/dev-seed"]
+    networks: [data]
+  minio-a:
+    image: minio/minio:RELEASE.2024-08-03T04-33-23Z
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: endpoint-a-user
+      MINIO_ROOT_PASSWORD: endpoint-a-secret
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_a_data:/data
+    networks: [app, data]
+    healthcheck:
+      test: ["CMD-SHELL", "mc ready local || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+  minio-b:
+    image: minio/minio:RELEASE.2024-08-03T04-33-23Z
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: endpoint-b-user
+      MINIO_ROOT_PASSWORD: endpoint-b-secret
+    ports:
+      - "9010:9000"
+      - "9011:9001"
+    volumes:
+      - minio_b_data:/data
+    networks: [app, data]
+    healthcheck:
+      test: ["CMD-SHELL", "mc ready local || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+volumes:
+  postgres_data:
+  naimio_media:
+  minio_a_data:
+  minio_b_data:
+networks:
+  app:
+  data:
+    internal: true

@@ -1,0 +1,1 @@
+import type { ReactNode } from "react";import { publicMetadata } from "../seo";export const metadata=publicMetadata("Обучение и наставничество","Обучение и наставничество из общего каталога услуг без отдельного LMS.","/education");export default function Layout({children}:{children:ReactNode}){return children}

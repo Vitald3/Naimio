@@ -1,0 +1,1 @@
+export default function ProBadge({compact=false}:{compact?:boolean}){return <span className={compact?"pro-badge pro-badge--compact":"pro-badge"} aria-label="Пользователь Naimio PRO" title="Naimio PRO"><span aria-hidden="true">◆</span> PRO</span>}

@@ -1,0 +1,1 @@
+import type { ReactNode } from "react";import { publicMetadata } from "../seo";export const metadata=publicMetadata("Специалисты-фрилансеры","Публичные профили специалистов с навыками, портфолио и раздельной репутацией.","/freelancers");export default function Layout({children}:{children:ReactNode}){return children}

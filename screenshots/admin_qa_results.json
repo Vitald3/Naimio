@@ -1,0 +1,121 @@
+{
+  "testedViewports": [
+    390,
+    430,
+    768,
+    1024,
+    1280,
+    1440
+  ],
+  "overflows": [
+    {
+      "page": "admin_calculators",
+      "path": "/x7m4q9k2/calculators",
+      "viewport": 1024,
+      "layout": {
+        "docW": 1207,
+        "winW": 1024,
+        "hasOverflow": true,
+        "overflowingElements": [
+          {
+            "tag": "HEADER",
+            "className": "calculator-builder__header",
+            "id": "",
+            "right": 1207,
+            "width": 547,
+            "text": "Версия 2\nСтоимость SEO-продвижения\n25 000 ₽–60 000"
+          },
+          {
+            "tag": "LABEL",
+            "className": "calculator-switch",
+            "id": "",
+            "right": 1207,
+            "width": 223.515625,
+            "text": "Показывать на сайте"
+          },
+          {
+            "tag": "INPUT",
+            "className": "",
+            "id": "",
+            "right": 1046.484375,
+            "width": 46,
+            "text": ""
+          },
+          {
+            "tag": "SPAN",
+            "className": "",
+            "id": "",
+            "right": 1194,
+            "width": 135.515625,
+            "text": "Показывать на сайте"
+          },
+          {
+            "tag": "SECTION",
+            "className": "calculator-builder__section",
+            "id": "",
+            "right": 1207,
+            "width": 547,
+            "text": "Раздел\nАдрес раздела\nНазвание\nОписание"
+          }
+        ],
+        "hiddenButtons": [],
+        "title": "Naimio Control Center | Naimio"
+      }
+    },
+    {
+      "page": "admin_calculators",
+      "path": "/x7m4q9k2/calculators",
+      "viewport": 1280,
+      "layout": {
+        "docW": 1354,
+        "winW": 1280,
+        "hasOverflow": true,
+        "overflowingElements": [
+          {
+            "tag": "HEADER",
+            "className": "calculator-builder__header",
+            "id": "",
+            "right": 1354,
+            "width": 547,
+            "text": "Версия 2\nСтоимость SEO-продвижения\n25 000 ₽–60 000"
+          },
+          {
+            "tag": "LABEL",
+            "className": "calculator-switch",
+            "id": "",
+            "right": 1354,
+            "width": 223.515625,
+            "text": "Показывать на сайте"
+          },
+          {
+            "tag": "SPAN",
+            "className": "",
+            "id": "",
+            "right": 1341,
+            "width": 135.515625,
+            "text": "Показывать на сайте"
+          },
+          {
+            "tag": "SECTION",
+            "className": "calculator-builder__section",
+            "id": "",
+            "right": 1354,
+            "width": 547,
+            "text": "Раздел\nАдрес раздела\nНазвание\nОписание"
+          },
+          {
+            "tag": "H3",
+            "className": "",
+            "id": "",
+            "right": 1335,
+            "width": 509,
+            "text": "Раздел"
+          }
+        ],
+        "hiddenButtons": [],
+        "title": "Naimio Control Center | Naimio"
+      }
+    }
+  ],
+  "details": []
+}

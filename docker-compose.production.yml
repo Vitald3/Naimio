@@ -1,0 +1,24 @@
+# Use with: docker compose --env-file .env.production -f docker-compose.yml -f docker-compose.production.yml up -d
+services:
+  nginx:
+    ports: ["80:80", "443:443"]
+    volumes:
+      - ./infra/nginx/nginx.production.conf:/etc/nginx/nginx.conf:ro
+      - ${TLS_CERTS_DIR:?set TLS_CERTS_DIR}:/etc/nginx/tls:ro
+  web:
+    environment:
+      NODE_ENV: production
+      NEXT_PUBLIC_SITE_URL: ${PUBLIC_BASE_URL:?set PUBLIC_BASE_URL}
+  api:
+    environment:
+      APP_ENV: production
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:?set PUBLIC_BASE_URL}
+      SAFE_DEAL_PROVIDER: ${SAFE_DEAL_PROVIDER:-disabled}
+      DB_MAX_OPEN_CONNS: ${DB_MAX_OPEN_CONNS:-20}
+      DB_MAX_IDLE_CONNS: ${DB_MAX_IDLE_CONNS:-5}
+      DB_CONN_MAX_LIFETIME: ${DB_CONN_MAX_LIFETIME:-30m}
+      DB_CONN_MAX_IDLE_TIME: ${DB_CONN_MAX_IDLE_TIME:-5m}
+  worker:
+    environment:
+      APP_ENV: production
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:?set PUBLIC_BASE_URL}

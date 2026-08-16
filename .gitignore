@@ -1,0 +1,8 @@
+apps/web/node_modules/
+apps/web/.next/
+*.log
+.env
+.env.*
+.DS_Store
+.idea/
+tmp/

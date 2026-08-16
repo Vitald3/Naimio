@@ -1,0 +1,1 @@
+import type {ReactNode} from "react";import type {Metadata} from "next";import {publicMetadata} from "../seo";export const metadata:Metadata=publicMetadata("Naimio PRO","Расширенные возможности профиля, портфолио и аналитики для активных специалистов.","/pro");export default function Layout({children}:{children:ReactNode}){return children}

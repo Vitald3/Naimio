@@ -1,0 +1,1 @@
+import type{ReactNode}from"react";import type{Metadata}from"next";import{publicMetadata}from"../seo";export const metadata:Metadata=publicMetadata("Блог","Практические материалы Naimio о фрилансе, бизнесе и запуске цифровых продуктов.","/blog");export default function Layout({children}:{children:ReactNode}){return children}

@@ -1,0 +1,1 @@
+import type { ReactNode } from "react";import { publicMetadata } from "../seo";export const metadata=publicMetadata("Проверить коммерческое предложение","Разберите состав работ, риски и ориентировочный диапазон цены без публикации исходного текста.","/check-offer");export default function Layout({children}:{children:ReactNode}){return children}
