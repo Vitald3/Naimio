@@ -174,7 +174,7 @@ docker compose --env-file .env.production up -d --build
 
 ```bash
 sudo docker compose --env-file .env.production build api create-admin
-docker compose --env-file .env.production run --rm create-admin
+sudo docker compose --env-file .env.production run --rm create-admin
 ```
 
 4.  Проверку состояния:

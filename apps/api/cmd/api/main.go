@@ -627,6 +627,7 @@ func main() {
 	mux.Handle("/api/v1/admin/feature-flags/", protectAdmin(http.HandlerFunc(adminHandler.FeatureFlags)))
 	mux.Handle("/api/v1/admin/storage-settings", protectAdmin(adminHandler.StorageSettingsHandler(storageManager)))
 	mux.Handle("/api/v1/admin/storage-settings/", protectAdmin(adminHandler.StorageSettingsHandler(storageManager)))
+	mux.Handle("/api/v1/admin/indexnow/submit", protectAdmin(http.HandlerFunc(adminHandler.IndexNowSubmit)))
 	mux.Handle("/api/v1/site-settings", rateMiddleware.Limit(ratelimit.PublicRead, privateNoStore(http.HandlerFunc(adminHandler.SiteSettings))))
 	if database != nil {
 		mux.Handle("/api/v1/monetization", rateMiddleware.Limit(ratelimit.PublicRead, privateNoStore(http.HandlerFunc(monetizationHandler.Public))))

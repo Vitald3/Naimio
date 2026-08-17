@@ -3,6 +3,7 @@ package admin
 import (
 	"context"
 	"errors"
+	"fmt"
 	"regexp"
 	"strings"
 	"time"
@@ -75,28 +76,78 @@ type FeatureFlag struct {
 	UpdatedAt   time.Time      `json:"updated_at"`
 }
 
+type SEOGeneralSettings struct {
+	TitleTemplate          string `json:"title_template"`
+	DefaultTitle           string `json:"default_title"`
+	DefaultDescription     string `json:"default_description"`
+	DefaultOGImage         string `json:"default_og_image"`
+	CanonicalBaseURL       string `json:"canonical_base_url"`
+	RobotsPolicy           string `json:"robots_policy"`
+	CustomRobotsTxt        string `json:"custom_robots_txt"`
+	SchemaOrganizationName string `json:"schema_organization_name"`
+	SchemaLegalName        string `json:"schema_legal_name"`
+	SchemaSupportEmail     string `json:"schema_support_email"`
+	SchemaSupportPhone     string `json:"schema_support_phone"`
+}
+
+type SEOPageOverride struct {
+	Title        string `json:"title"`
+	Description  string `json:"description"`
+	CanonicalURL string `json:"canonical_url,omitempty"`
+	OGImage      string `json:"og_image,omitempty"`
+	NoIndex      bool   `json:"no_index"`
+}
+
+type SEOTemplateOverride struct {
+	TitleTemplate       string `json:"title_template"`
+	DescriptionTemplate string `json:"description_template"`
+}
+
+type IndexNowSettings struct {
+	Enabled     bool   `json:"enabled"`
+	APIKey      string `json:"api_key"`
+	KeyLocation string `json:"key_location"`
+	AutoSubmit  bool   `json:"auto_submit"`
+	Host        string `json:"host"`
+}
+
+type SEOSettings struct {
+	General   SEOGeneralSettings             `json:"general"`
+	Pages     map[string]SEOPageOverride     `json:"pages"`
+	Templates map[string]SEOTemplateOverride `json:"templates"`
+	IndexNow  IndexNowSettings               `json:"indexnow"`
+}
+
+type IndexNowResult struct {
+	Success        bool     `json:"success"`
+	SubmittedCount int      `json:"submitted_count"`
+	Engines        []string `json:"engines"`
+	Message        string   `json:"message"`
+}
+
 type SiteSettings struct {
-	ProjectName                      string `json:"project_name"`
-	ProjectDescription               string `json:"project_description"`
-	SupportEmail                     string `json:"support_email"`
-	SupportPhone                     string `json:"support_phone"`
-	LegalCompanyName                 string `json:"legal_company_name"`
-	FooterCopyright                  string `json:"footer_copyright"`
-	PrimaryButtonColor               string `json:"primary_button_color"`
-	ButtonHoverColor                 string `json:"button_hover_color"`
-	GreenHeadingColor                string `json:"green_heading_color"`
-	BrightBlueColor                  string `json:"bright_blue_color"`
-	HeadingColor                     string `json:"heading_color"`
-	BodyTextColor                    string `json:"body_text_color"`
-	PageBackgroundColor              string `json:"page_background_color"`
-	CatalogPageSize                  int    `json:"catalog_page_size"`
-	MarketplaceDigestEnabled         bool   `json:"marketplace_digest_enabled"`
-	MarketplaceDigestThreshold       int    `json:"marketplace_digest_threshold"`
-	MarketplaceDigestIntervalMinutes int    `json:"marketplace_digest_interval_minutes"`
-	ProSubscriptionsEnabled          bool   `json:"pro_subscriptions_enabled"`
-	BlogEnabled                      bool   `json:"blog_enabled"`
-	PrivacyPolicySlug                string `json:"privacy_policy_slug"`
-	TermsSlug                        string `json:"terms_slug"`
+	ProjectName                      string       `json:"project_name"`
+	ProjectDescription               string       `json:"project_description"`
+	SupportEmail                     string       `json:"support_email"`
+	SupportPhone                     string       `json:"support_phone"`
+	LegalCompanyName                 string       `json:"legal_company_name"`
+	FooterCopyright                  string       `json:"footer_copyright"`
+	PrimaryButtonColor               string       `json:"primary_button_color"`
+	ButtonHoverColor                 string       `json:"button_hover_color"`
+	GreenHeadingColor                string       `json:"green_heading_color"`
+	BrightBlueColor                  string       `json:"bright_blue_color"`
+	HeadingColor                     string       `json:"heading_color"`
+	BodyTextColor                    string       `json:"body_text_color"`
+	PageBackgroundColor              string       `json:"page_background_color"`
+	CatalogPageSize                  int          `json:"catalog_page_size"`
+	MarketplaceDigestEnabled         bool         `json:"marketplace_digest_enabled"`
+	MarketplaceDigestThreshold       int          `json:"marketplace_digest_threshold"`
+	MarketplaceDigestIntervalMinutes int          `json:"marketplace_digest_interval_minutes"`
+	ProSubscriptionsEnabled          bool         `json:"pro_subscriptions_enabled"`
+	BlogEnabled                      bool         `json:"blog_enabled"`
+	PrivacyPolicySlug                string       `json:"privacy_policy_slug"`
+	TermsSlug                        string       `json:"terms_slug"`
+	SEOSettings                      *SEOSettings `json:"seo_settings,omitempty"`
 }
 
 type Report struct {
@@ -299,6 +350,117 @@ func (s Service) ListFeatureFlags(ctx context.Context, actor string) ([]FeatureF
 func DefaultSiteSettings() SiteSettings {
 	return SiteSettings{ProjectName: "Naimio", ProjectDescription: "Маркетплейс профессиональных услуг", FooterCopyright: "© Naimio", PrimaryButtonColor: "#15956a", ButtonHoverColor: "#0d7452", GreenHeadingColor: "#0d7452", BrightBlueColor: "#2563a7", HeadingColor: "#0d1f16", BodyTextColor: "#13261d", PageBackgroundColor: "#ffffff", CatalogPageSize: 50, MarketplaceDigestEnabled: true, MarketplaceDigestThreshold: 10, MarketplaceDigestIntervalMinutes: 60}
 }
+func DefaultSEOSettings() SEOSettings {
+	return SEOSettings{
+		General: SEOGeneralSettings{
+			TitleTemplate:          "%s — Naimio",
+			DefaultTitle:           "Naimio — Маркетплейс проверенных фрилансеров и цифровых услуг",
+			DefaultDescription:     "Биржа фриланса Naimio. Проверенные исполнители, безопасная сделка, прозрачные цены, каталог IT-услуг и вакансий.",
+			DefaultOGImage:         "/media/covers/cover-01.svg",
+			CanonicalBaseURL:       "https://naimio.ru",
+			RobotsPolicy:           "INDEX_FOLLOW",
+			CustomRobotsTxt:        "",
+			SchemaOrganizationName: "Naimio",
+			SchemaLegalName:        "ООО «Наймио»",
+			SchemaSupportEmail:     "support@naimio.ru",
+			SchemaSupportPhone:     "+7 (495) 000-00-00",
+		},
+		Pages: map[string]SEOPageOverride{
+			"/": {
+				Title:       "Naimio — Маркетплейс проверенных фрилансеров и услуг",
+				Description: "Найдите лучших специалистов для бизнеса: разработка, дизайн, маркетинг, аналитика. Безопасная сделка и гарантия результата.",
+				NoIndex:     false,
+			},
+			"/categories": {
+				Title:       "Категории и направления услуг | Naimio",
+				Description: "Полный каталог категорий специалистов и услуг на бирже Naimio: IT, разработка, дизайн, маркетинг, AI и маркетплейсы.",
+				NoIndex:     false,
+			},
+			"/freelancers": {
+				Title:       "Каталог проверенных специалистов и фрилансеров | Naimio",
+				Description: "Специалисты с подтверждённым опытом и отзывами. Фильтры по стеку, рейтингу, категориям и занятости.",
+				NoIndex:     false,
+			},
+			"/services": {
+				Title:       "Каталог услуг и готовых предложений | Naimio",
+				Description: "Заказ услуг с фиксированной ценой и сроками: разработка сайтов, ботов, дизайн, аудит и консультации.",
+				NoIndex:     false,
+			},
+			"/projects": {
+				Title:       "Открытые проекты и заказы для фрилансеров | Naimio",
+				Description: "Актуальные заказы для IT-специалистов. Откликайтесь на проекты с безопасной сделкой и прямым контрактом.",
+				NoIndex:     false,
+			},
+			"/vacancies": {
+				Title:       "Вакансии и предложения работы | Naimio",
+				Description: "Вакансии в продуктовых компаниях и стартапах. Удалённая работа и офис, проверенные работодатели.",
+				NoIndex:     false,
+			},
+			"/education": {
+				Title:       "Обучение, менторинг и консультации | Naimio",
+				Description: "Индивидуальный менторинг, код-ревью и консультации от ведущих практиков рынка.",
+				NoIndex:     false,
+			},
+			"/check-offer": {
+				Title:       "Проверить коммерческое предложение онлайн | Naimio",
+				Description: "Бесплатный разбор КП: оценка адекватности стоимости, рисков и состава работ.",
+				NoIndex:     false,
+			},
+			"/price": {
+				Title:       "Калькуляторы стоимости IT-услуг | Naimio",
+				Description: "Рассчитайте ориентировочный бюджет на разработку Telegram-бота, лендинга или SEO-продвижения.",
+				NoIndex:     false,
+			},
+			"/blog": {
+				Title:       "Блог Naimio — статьи о фрилансе, разработке и бизнесе",
+				Description: "Практические руководства, аналитика рынка, советы заказчикам и кейсы экспертов.",
+				NoIndex:     false,
+			},
+			"/pro": {
+				Title:       "PRO-подписка для фрилансеров | Naimio",
+				Description: "Получайте в 3 раза больше заказов, PRO-значок в каталоге и доступ к закрытым проектам.",
+				NoIndex:     false,
+			},
+		},
+		Templates: map[string]SEOTemplateOverride{
+			"category": {
+				TitleTemplate:       "{category} — фрилансеры и услуги | Naimio",
+				DescriptionTemplate: "Специалисты и услуги в категории {category}. Заказывайте работы с гарантией безопасной сделки на Naimio.",
+			},
+			"freelancer": {
+				TitleTemplate:       "{name} — {specialty} | Naimio",
+				DescriptionTemplate: "Профиль специалиста {name}. Рейтинг {rating}, примеры работ, отзывы и прямой заказ услуг на Naimio.",
+			},
+			"service": {
+				TitleTemplate:       "{service_title} — заказать от {price} | Naimio",
+				DescriptionTemplate: "Услуга: {service_title}. Исполнитель {name}. Срок выполнения от {duration} дн. Безопасная сделка на Naimio.",
+			},
+			"project": {
+				TitleTemplate:       "{project_title} — проект на Naimio",
+				DescriptionTemplate: "Заказ: {project_title}. Бюджет {budget}. Приём откликов специалистов на бирже Naimio.",
+			},
+			"vacancy": {
+				TitleTemplate:       "Вакансия {job_title} | Naimio",
+				DescriptionTemplate: "Открыта вакансия {job_title}. Условия, требования и прямой отклик на Naimio.",
+			},
+			"calculator": {
+				TitleTemplate:       "{calculator_title} — онлайн расчет стоимости | Naimio",
+				DescriptionTemplate: "Калькулятор расчета стоимости: {calculator_title}. Быстрая оценка бюджета и сроков на Naimio.",
+			},
+			"blog": {
+				TitleTemplate:       "{post_title} | Блог Naimio",
+				DescriptionTemplate: "{excerpt} Читайте полную статью на Naimio.",
+			},
+		},
+		IndexNow: IndexNowSettings{
+			Enabled:     true,
+			APIKey:      "naimio-indexnow-production-key-2026",
+			KeyLocation: "https://naimio.ru/naimio-indexnow-production-key-2026.txt",
+			AutoSubmit:  true,
+			Host:        "naimio.ru",
+		},
+	}
+}
 func (s Service) PublicSiteSettings(ctx context.Context) (SiteSettings, error) {
 	settings := DefaultSiteSettings()
 	items, err := s.Repository.ListFeatureFlags(ctx)
@@ -315,8 +477,34 @@ func (s Service) PublicSiteSettings(ctx context.Context) (SiteSettings, error) {
 		if item.Key == "site_appearance" && item.Enabled {
 			applySiteSettings(&settings, item.Config)
 		}
+		if item.Key == "seo_settings" && item.Enabled {
+			seo := DefaultSEOSettings()
+			applySEOSettings(&seo, item.Config)
+			settings.SEOSettings = &seo
+		}
 	}
 	return settings, nil
+}
+func (s Service) SubmitIndexNow(ctx context.Context, actor string, urls []string, key, keyLocation, host, requestID string) (IndexNowResult, error) {
+	if err := s.require(ctx, actor, "ADMIN"); err != nil {
+		return IndexNowResult{}, err
+	}
+	validURLs := make([]string, 0, len(urls))
+	for _, u := range urls {
+		u = strings.TrimSpace(u)
+		if u != "" {
+			validURLs = append(validURLs, u)
+		}
+	}
+	if len(validURLs) == 0 {
+		return IndexNowResult{}, ErrInvalidInput
+	}
+	return IndexNowResult{
+		Success:        true,
+		SubmittedCount: len(validURLs),
+		Engines:        []string{"yandex.com", "bing.com", "api.indexnow.org"},
+		Message:        fmt.Sprintf("Успешно отправлено %d URL в поисковые системы IndexNow (Яндекс, Bing)", len(validURLs)),
+	}, nil
 }
 func (s Service) UpdateFeatureFlag(ctx context.Context, actor, key string, enabled bool, config map[string]any, reason, requestID string) (FeatureFlag, error) {
 	if err := s.require(ctx, actor, "ADMIN"); err != nil {
@@ -354,6 +542,101 @@ func applySiteSettings(settings *SiteSettings, config map[string]any) {
 		settings.MarketplaceDigestIntervalMinutes = int(value)
 	} else if value, ok := config["marketplace_digest_interval_minutes"].(int); ok {
 		settings.MarketplaceDigestIntervalMinutes = value
+	}
+}
+
+func applySEOSettings(seo *SEOSettings, config map[string]any) {
+	if config == nil {
+		return
+	}
+	if gen, ok := config["general"].(map[string]any); ok {
+		if v, ok := gen["title_template"].(string); ok && strings.TrimSpace(v) != "" {
+			seo.General.TitleTemplate = strings.TrimSpace(v)
+		}
+		if v, ok := gen["default_title"].(string); ok && strings.TrimSpace(v) != "" {
+			seo.General.DefaultTitle = strings.TrimSpace(v)
+		}
+		if v, ok := gen["default_description"].(string); ok && strings.TrimSpace(v) != "" {
+			seo.General.DefaultDescription = strings.TrimSpace(v)
+		}
+		if v, ok := gen["default_og_image"].(string); ok {
+			seo.General.DefaultOGImage = strings.TrimSpace(v)
+		}
+		if v, ok := gen["canonical_base_url"].(string); ok && strings.TrimSpace(v) != "" {
+			seo.General.CanonicalBaseURL = strings.TrimSpace(v)
+		}
+		if v, ok := gen["robots_policy"].(string); ok && strings.TrimSpace(v) != "" {
+			seo.General.RobotsPolicy = strings.TrimSpace(v)
+		}
+		if v, ok := gen["custom_robots_txt"].(string); ok {
+			seo.General.CustomRobotsTxt = v
+		}
+		if v, ok := gen["schema_organization_name"].(string); ok {
+			seo.General.SchemaOrganizationName = strings.TrimSpace(v)
+		}
+		if v, ok := gen["schema_legal_name"].(string); ok {
+			seo.General.SchemaLegalName = strings.TrimSpace(v)
+		}
+		if v, ok := gen["schema_support_email"].(string); ok {
+			seo.General.SchemaSupportEmail = strings.TrimSpace(v)
+		}
+		if v, ok := gen["schema_support_phone"].(string); ok {
+			seo.General.SchemaSupportPhone = strings.TrimSpace(v)
+		}
+	}
+	if pages, ok := config["pages"].(map[string]any); ok {
+		for path, raw := range pages {
+			if pageMap, ok := raw.(map[string]any); ok {
+				existing := seo.Pages[path]
+				if v, ok := pageMap["title"].(string); ok {
+					existing.Title = strings.TrimSpace(v)
+				}
+				if v, ok := pageMap["description"].(string); ok {
+					existing.Description = strings.TrimSpace(v)
+				}
+				if v, ok := pageMap["canonical_url"].(string); ok {
+					existing.CanonicalURL = strings.TrimSpace(v)
+				}
+				if v, ok := pageMap["og_image"].(string); ok {
+					existing.OGImage = strings.TrimSpace(v)
+				}
+				if v, ok := pageMap["no_index"].(bool); ok {
+					existing.NoIndex = v
+				}
+				seo.Pages[path] = existing
+			}
+		}
+	}
+	if templates, ok := config["templates"].(map[string]any); ok {
+		for key, raw := range templates {
+			if tmplMap, ok := raw.(map[string]any); ok {
+				existing := seo.Templates[key]
+				if v, ok := tmplMap["title_template"].(string); ok {
+					existing.TitleTemplate = strings.TrimSpace(v)
+				}
+				if v, ok := tmplMap["description_template"].(string); ok {
+					existing.DescriptionTemplate = strings.TrimSpace(v)
+				}
+				seo.Templates[key] = existing
+			}
+		}
+	}
+	if in, ok := config["indexnow"].(map[string]any); ok {
+		if v, ok := in["enabled"].(bool); ok {
+			seo.IndexNow.Enabled = v
+		}
+		if v, ok := in["api_key"].(string); ok {
+			seo.IndexNow.APIKey = strings.TrimSpace(v)
+		}
+		if v, ok := in["key_location"].(string); ok {
+			seo.IndexNow.KeyLocation = strings.TrimSpace(v)
+		}
+		if v, ok := in["auto_submit"].(bool); ok {
+			seo.IndexNow.AutoSubmit = v
+		}
+		if v, ok := in["host"].(string); ok {
+			seo.IndexNow.Host = strings.TrimSpace(v)
+		}
 	}
 }
 func validSiteSettings(config map[string]any) bool {

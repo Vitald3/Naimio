@@ -441,6 +441,35 @@ func replyPage(w http.ResponseWriter, data any, p PageInfo) {
 	}
 	reply(w, http.StatusOK, map[string]any{"data": data, "page": map[string]any{"next_cursor": next, "has_more": p.HasMore}})
 }
+
+func (h Handler) IndexNowSubmit(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		method(w, r)
+		return
+	}
+	actor, ok := h.actor(w, r)
+	if !ok {
+		return
+	}
+	var in struct {
+		URLs        []string `json:"urls"`
+		Key         string   `json:"key"`
+		KeyLocation string   `json:"key_location,omitempty"`
+		Host        string   `json:"host,omitempty"`
+	}
+	if !decode(w, r, &in) {
+		return
+	}
+	if len(in.URLs) == 0 {
+		problem(w, r, http.StatusUnprocessableEntity, "VALIDATION_ERROR", "список URL не может быть пустым")
+		return
+	}
+	v, err := h.Service.SubmitIndexNow(r.Context(), actor, in.URLs, in.Key, in.KeyLocation, in.Host, requestID(r))
+	if handle(w, r, err) {
+		return
+	}
+	reply(w, http.StatusOK, map[string]any{"data": v})
+}
 func decode(w http.ResponseWriter, r *http.Request, target any) bool {
 	r.Body = http.MaxBytesReader(w, r.Body, 128<<10)
 	d := json.NewDecoder(r.Body)

@@ -22,20 +22,35 @@ export const publicMetadata = (
   title: string,
   description: string,
   path: string,
-): Metadata => ({
-  title,
-  description,
-  alternates: { canonical: path },
-  robots: { index: true, follow: true },
-  openGraph: {
-    type: "website",
-    locale: "ru_RU",
-    url: path,
-    siteName: "Naimio",
+  options?: {
+    ogImage?: string;
+    noIndex?: boolean;
+    type?: "website" | "article" | "profile";
+  },
+): Metadata => {
+  const images = options?.ogImage ? [{ url: options.ogImage }] : undefined;
+  return {
     title,
     description,
-  },
-});
+    alternates: { canonical: path },
+    robots: options?.noIndex ? { index: false, follow: false } : { index: true, follow: true },
+    openGraph: {
+      type: options?.type || "website",
+      locale: "ru_RU",
+      url: path,
+      siteName: "Naimio",
+      title,
+      description,
+      images,
+    },
+    twitter: {
+      card: options?.ogImage ? "summary_large_image" : "summary",
+      title,
+      description,
+      images: options?.ogImage ? [options.ogImage] : undefined,
+    },
+  };
+};
 export const missingMetadata = (title: string): Metadata => ({
   title,
   robots: { index: false, follow: false },

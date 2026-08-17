@@ -5,7 +5,7 @@ import (
 	"context"
 	"crypto/rand"
 	"database/sql"
-	"encoding/hex"
+	"encoding/base64"
 	"fmt"
 	"log"
 	"os"
@@ -206,11 +206,9 @@ func readPassword(label string) []byte {
 }
 
 func hashPassword(password []byte) string {
-
 	salt := make([]byte, 16)
 
 	_, err := rand.Read(salt)
-
 	if err != nil {
 		log.Fatal("failed to generate salt:", err)
 	}
@@ -229,8 +227,8 @@ func hashPassword(password []byte) string {
 		argonMemory,
 		argonTime,
 		argonThreads,
-		hex.EncodeToString(salt),
-		hex.EncodeToString(hash),
+		base64.RawStdEncoding.EncodeToString(salt),
+		base64.RawStdEncoding.EncodeToString(hash),
 	)
 }
 
