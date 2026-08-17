@@ -260,7 +260,7 @@ func savePost(ctx context.Context, tx *sql.Tx, actor, id string, in WriteRequest
 		scheduled = in.ScheduledAt
 	}
 	if create {
-		err := tx.QueryRowContext(ctx, `INSERT INTO blog_posts(author_user_id,category_id,cover_media_object_id,title,slug,excerpt,content_html,cover_alt,status,seo_title,seo_description,canonical_url,published_at,scheduled_at) SELECT $1,$2::uuid,m.id,$4,$5,$6,$7,NULLIF($8,''),$9,NULLIF($10,''),NULLIF($11,''),NULLIF($12,''),$13,$14 FROM (SELECT 1)x LEFT JOIN media_objects m ON m.id=NULLIF($3::text,'')::uuid AND m.owner_user_id=$1 AND m.purpose='BLOG_COVER' AND m.scan_status='CLEAN' AND m.uploaded_at IS NOT NULL AND m.deleted_at IS NULL WHERE ($3::text='' OR m.id IS NOT NULL) RETURNING id::text`, actor, category, func() any {
+		err := tx.QueryRowContext(ctx, `INSERT INTO blog_posts(author_user_id,category_id,cover_media_object_id,title,slug,excerpt,content_html,cover_alt,status,seo_title,seo_description,canonical_url,published_at,scheduled_at) SELECT $1,$2::uuid,m.id,$4,$5,$6,$7,NULLIF($8,''),$9,NULLIF($10,''),NULLIF($11,''),NULLIF($12,''),$13,$14 FROM (SELECT 1)x LEFT JOIN media_objects m ON m.id=NULLIF($3::text,'')::uuid AND m.purpose='BLOG_COVER' AND m.uploaded_at IS NOT NULL AND m.deleted_at IS NULL AND (m.scan_status='CLEAN' OR ($9<>'PUBLISHED' AND m.scan_status='PENDING')) WHERE ($3::text='' OR m.id IS NOT NULL) RETURNING id::text`, actor, category, func() any {
 			if cover == nil {
 				return ""
 			}
@@ -268,12 +268,12 @@ func savePost(ctx context.Context, tx *sql.Tx, actor, id string, in WriteRequest
 		}(), in.Title, in.Slug, in.Excerpt, in.ContentHTML, in.CoverAlt, in.Status, in.SEOTitle, in.SEODescription, in.CanonicalURL, published, scheduled).Scan(&id)
 		return id, mapBlogError(err)
 	}
-	res, err := tx.ExecContext(ctx, `UPDATE blog_posts p SET category_id=$3::uuid,cover_media_object_id=m.id,title=$4,slug=$5,excerpt=$6,content_html=$7,cover_alt=NULLIF($8,''),status=$9,seo_title=NULLIF($10,''),seo_description=NULLIF($11,''),canonical_url=NULLIF($12,''),published_at=CASE WHEN $9='PUBLISHED' THEN COALESCE(p.published_at,now()) ELSE NULL END,scheduled_at=$13,updated_at=now() FROM (SELECT mo.id FROM (SELECT 1)x LEFT JOIN media_objects mo ON mo.id=NULLIF($2::text,'')::uuid AND mo.owner_user_id=$14 AND mo.purpose='BLOG_COVER' AND mo.scan_status='CLEAN' AND mo.uploaded_at IS NOT NULL AND mo.deleted_at IS NULL WHERE ($2::text='' OR mo.id IS NOT NULL))m WHERE p.id=$1`, id, func() any {
+	res, err := tx.ExecContext(ctx, `UPDATE blog_posts p SET category_id=$3::uuid,cover_media_object_id=m.id,title=$4,slug=$5,excerpt=$6,content_html=$7,cover_alt=NULLIF($8,''),status=$9,seo_title=NULLIF($10,''),seo_description=NULLIF($11,''),canonical_url=NULLIF($12,''),published_at=CASE WHEN $9='PUBLISHED' THEN COALESCE(p.published_at,now()) ELSE NULL END,scheduled_at=$13,updated_at=now() FROM (SELECT mo.id FROM (SELECT 1)x LEFT JOIN media_objects mo ON mo.id=NULLIF($2::text,'')::uuid AND mo.purpose='BLOG_COVER' AND mo.uploaded_at IS NOT NULL AND mo.deleted_at IS NULL AND (mo.scan_status='CLEAN' OR ($9<>'PUBLISHED' AND mo.scan_status='PENDING')) WHERE ($2::text='' OR mo.id IS NOT NULL))m WHERE p.id=$1`, id, func() any {
 		if cover == nil {
 			return ""
 		}
 		return cover
-	}(), category, in.Title, in.Slug, in.Excerpt, in.ContentHTML, in.CoverAlt, in.Status, in.SEOTitle, in.SEODescription, in.CanonicalURL, scheduled, actor)
+	}(), category, in.Title, in.Slug, in.Excerpt, in.ContentHTML, in.CoverAlt, in.Status, in.SEOTitle, in.SEODescription, in.CanonicalURL, scheduled)
 	if err != nil {
 		return id, mapBlogError(err)
 	}

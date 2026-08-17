@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { AdminError, AdminHeader, AdminLoading, AdminTable, StatusPill, adminRequest } from "../admin-ui";
+import { AdminError, AdminHeader, AdminPaymentRoutingSkeleton, AdminTable, StatusPill, adminRequest } from "../admin-ui";
 import { useToast } from "../../toast";
 import { CustomSelect } from "../../custom-select";
 
@@ -99,7 +99,7 @@ export default function PaymentRoutingPage() {
 
   return <>
     <AdminHeader title="Платёжные провайдеры" description="Credentials, режим Sandbox/Production, включение и маршрутизация управляются здесь. Секретные значения хранятся зашифрованно и никогда не выводятся обратно." />
-    {error ? <AdminError message={error} onRetry={load} /> : !routes || !providerSettings ? <AdminLoading /> : <>
+    {error ? <AdminError message={error} onRetry={load} /> : !routes || !providerSettings ? <AdminPaymentRoutingSkeleton /> : <>
       <section className="admin-section">
         <h2>Маршруты операций</h2>
         <p>Здесь выбирается текущий PSP для <strong>новых</strong> операций каждого домена: Safe Deal, PRO-подписок и остальных платежей платформы. Включить можно несколько провайдеров, но для каждого домена используется один выбранный маршрут. Уже созданные платежи остаются закреплены за исходным PSP.</p>

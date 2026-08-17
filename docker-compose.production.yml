@@ -134,6 +134,24 @@ services:
     networks:
       - data
 
+  pgadmin:
+    container_name: freelance-pgadmin
+    image: dpage/pgadmin4:latest
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
+    ports:
+      - "127.0.0.1:5050:80"
+    networks:
+      - data
+      - default
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    restart: unless-stoppedЈ
+
   worker:
     build: ./worker
     depends_on:
@@ -219,6 +237,7 @@ volumes:
   postgres_data:
   redis_data:
   naimio_media:
+  pgadmin_data:
 
 networks:
   app:

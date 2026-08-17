@@ -2,3 +2,13 @@
 /coverage.out
 cmd/dev-seed/
 cmd/verify-final-audit/
+tests/
+docs/
+scripts/
+infra/
+*.md
+.github/
+.git/
+!db/
+!db/migrations/
+/dev-seed

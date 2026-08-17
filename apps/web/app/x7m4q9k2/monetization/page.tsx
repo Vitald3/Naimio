@@ -5,7 +5,7 @@ import { useToast } from "../../toast";
 import {
   AdminError,
   AdminHeader,
-  AdminLoading,
+  AdminMonetizationSkeleton,
   AdminReasonAction,
   AdminTable,
   StatusPill,
@@ -152,7 +152,7 @@ export default function MonetizationPage() {
         }
       />
       {loading ? (
-        <AdminLoading />
+        <AdminMonetizationSkeleton />
       ) : error ? (
         <AdminError message={error} onRetry={load} />
       ) : data ? (

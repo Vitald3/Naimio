@@ -317,7 +317,11 @@ func main() {
 
 	mediaStorage := storageManager
 	blogRepository := blog.PostgresRepository{DB: database}
-	mediaService := media.Service{Repository: mediaRepository, Storage: mediaStorage, Resolver: storageManager, Bucket: bucket, AutoClean: appEnv != "production"}
+	autoClean := true
+	if v := os.Getenv("MEDIA_AUTO_CLEAN"); v != "" {
+		autoClean = strings.ToLower(v) == "true" || v == "1"
+	}
+	mediaService := media.Service{Repository: mediaRepository, Storage: mediaStorage, Resolver: storageManager, Bucket: bucket, AutoClean: autoClean}
 	if database != nil {
 		mediaService.PurposeAuthorizer = blogRepository
 	}

@@ -37,17 +37,31 @@ export function StatusPill({ value }: { value: string }) {
 }
 
 import {
+  AdminCalculatorsSkeleton,
+  AdminCmsSkeleton,
   AdminDetailSkeleton,
+  AdminFeesSkeleton,
   AdminMetricsSkeleton,
+  AdminMonetizationSkeleton,
+  AdminPaymentRoutingSkeleton,
+  AdminSettingsSkeleton,
   AdminTableRowsSkeleton,
   AdminTableSkeleton,
+  AdminTaxonomySkeleton,
 } from "../skeletons";
 
 export {
+  AdminCalculatorsSkeleton,
+  AdminCmsSkeleton,
   AdminDetailSkeleton,
+  AdminFeesSkeleton,
   AdminMetricsSkeleton,
+  AdminMonetizationSkeleton,
+  AdminPaymentRoutingSkeleton,
+  AdminSettingsSkeleton,
   AdminTableRowsSkeleton,
   AdminTableSkeleton,
+  AdminTaxonomySkeleton,
 };
 
 export function AdminTable({
@@ -144,14 +158,36 @@ export async function adminRequest<T>(url: string, init?: RequestInit): Promise<
   const response = await fetch(url, { credentials: "same-origin", cache: "no-store", ...init, headers: { "Content-Type": "application/json", ...(init?.headers || {}) } });
   if (!response.ok) {
     let message = `HTTP ${response.status}`;
-    try { const body = await response.json(); message = body?.error?.message || message; } catch {}
-    const localized:Record<string,string>={
-      "admin permission required":"Недостаточно прав для этого раздела.",
-      "admin resource not found":"Раздел или запись не найдены.",
-      "invalid admin operation":"Проверьте заполненные данные.",
-      "admin operation conflicts with current state":"Действие недоступно в текущем состоянии.",
+    let code = "";
+    try {
+      const body = await response.json();
+      message = body?.error?.message || message;
+      code = body?.error?.code || "";
+    } catch {}
+    const localized: Record<string, string> = {
+      "admin permission required": "Недостаточно прав для этого раздела.",
+      "admin resource not found": "Раздел или запись не найдены.",
+      "invalid admin operation": "Проверьте заполненные данные.",
+      "admin operation conflicts with current state": "Действие недоступно в текущем состоянии.",
+      "invalid content data": "Некорректные данные материала. Проверьте заголовок, slug и обложку.",
+      "content not found": "Материал не найден.",
+      "content conflicts with an existing record or state": "Запись с таким slug уже существует или находится в несовместимом состоянии.",
+      "invalid upload payload": "Некорректные параметры загрузки файла.",
+      "upload payload is too large": "Файл превышает допустимый размер.",
+      "uploaded object does not match the presign request": "Загруженный файл не прошел проверку формата или размера.",
+      "authentication required": "Требуется авторизация администратора.",
+      "method not allowed": "Метод запроса не поддерживается.",
+      "request could not be completed": "Внутренняя ошибка сервера. Попробуйте снова.",
     };
-    message=localized[message]||message;
+    if (localized[message]) {
+      message = localized[message];
+    } else if (code === "VALIDATION_ERROR" && message === `HTTP ${response.status}`) {
+      message = "Проверьте правильность заполнения полей.";
+    } else if (code === "FORBIDDEN") {
+      message = "Недостаточно прав для выполнения этого действия.";
+    } else if (code === "CONFLICT") {
+      message = "Запись с такими параметрами уже существует.";
+    }
     throw new Error(message);
   }
   if (response.status === 204) return undefined as T;

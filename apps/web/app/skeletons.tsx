@@ -1105,3 +1105,259 @@ export function AdminMetricsSkeleton({ count = 12 }: { count?: number }) {
     </div>
   );
 }
+
+/**
+ * Admin CMS / Blog Skeleton
+ */
+export function AdminCmsSkeleton() {
+  return (
+    <div className="cms-layout" aria-busy="true" aria-label="Загрузка материалов блога">
+      <section className="admin-section">
+        <Skeleton height={20} width={120} rounded="sm" style={{ marginBottom: 16 }} />
+        <div className="cms-post-list">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="skeleton-card-item" style={{ padding: "14px 16px", borderBottom: "1px solid var(--border-subtle, rgba(0,0,0,0.06))" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
+                <Skeleton height={20} width={80} rounded="full" />
+                <Skeleton height={12} width={90} rounded="sm" />
+              </div>
+              <Skeleton height={16} width={i % 2 === 0 ? "80%" : "65%"} rounded="sm" style={{ marginBottom: 6 }} />
+              <Skeleton height={12} width={110} rounded="sm" />
+            </div>
+          ))}
+        </div>
+      </section>
+      <section className="admin-section">
+        <Skeleton height={20} width={110} rounded="sm" style={{ marginBottom: 16 }} />
+        <div style={{ display: "grid", gap: 10, marginBottom: 16 }}>
+          <Skeleton height={38} width="100%" rounded="md" />
+          <Skeleton height={38} width="100%" rounded="md" />
+          <Skeleton height={36} width={100} rounded="md" />
+        </div>
+        <div className="chip-row" style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+          {Array.from({ length: 6 }).map((_, i) => (
+            <Skeleton key={i} height={26} width={60 + (i % 4) * 15} rounded="full" />
+          ))}
+        </div>
+      </section>
+      <section className="admin-section">
+        <Skeleton height={20} width={80} rounded="sm" style={{ marginBottom: 16 }} />
+        <div style={{ display: "grid", gap: 10, marginBottom: 16 }}>
+          <Skeleton height={38} width="100%" rounded="md" />
+          <Skeleton height={38} width="100%" rounded="md" />
+          <Skeleton height={36} width={100} rounded="md" />
+        </div>
+        <div className="chip-row" style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+          {Array.from({ length: 8 }).map((_, i) => (
+            <Skeleton key={i} height={26} width={50 + (i % 3) * 20} rounded="full" />
+          ))}
+        </div>
+      </section>
+    </div>
+  );
+}
+
+/**
+ * Admin Calculators Builder Skeleton
+ */
+export function AdminCalculatorsSkeleton() {
+  return (
+    <div className="calculator-admin-grid" aria-busy="true" aria-label="Загрузка калькуляторов">
+      {Array.from({ length: 2 }).map((_, i) => (
+        <div key={i} className="calculator-builder" style={{ pointerEvents: "none" }}>
+          <header className="calculator-builder__header">
+            <div style={{ display: "grid", gap: 6 }}>
+              <Skeleton height={20} width={90} rounded="full" />
+              <Skeleton height={22} width={240} rounded="sm" />
+              <Skeleton height={14} width={140} rounded="sm" />
+            </div>
+            <Skeleton height={24} width={160} rounded="full" />
+          </header>
+          <section className="calculator-builder__section">
+            <Skeleton height={16} width={90} rounded="sm" style={{ marginBottom: 12 }} />
+            <div className="field-row" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
+              <Skeleton height={40} width="100%" rounded="md" />
+              <Skeleton height={40} width="100%" rounded="md" />
+            </div>
+            <Skeleton height={60} width="100%" rounded="md" />
+          </section>
+          <section className="calculator-builder__section">
+            <Skeleton height={16} width={120} rounded="sm" style={{ marginBottom: 12 }} />
+            <div className="field-row" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
+              <Skeleton height={40} width="100%" rounded="md" />
+              <Skeleton height={40} width="100%" rounded="md" />
+            </div>
+            <div className="field-row" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+              <Skeleton height={40} width="100%" rounded="md" />
+              <Skeleton height={40} width="100%" rounded="md" />
+            </div>
+          </section>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/**
+ * Admin Settings Skeleton
+ */
+export function AdminSettingsSkeleton() {
+  return (
+    <div className="admin-settings-skeleton" aria-busy="true" aria-label="Загрузка настроек">
+      <div className="settings-tabs" style={{ display: "flex", gap: 8, marginBottom: 24, overflowX: "auto" }}>
+        {Array.from({ length: 6 }).map((_, i) => (
+          <Skeleton key={i} height={38} width={120 + (i % 3) * 20} rounded="md" />
+        ))}
+      </div>
+      <div style={{ display: "grid", gap: 20 }}>
+        <section className="admin-panel" style={{ padding: 24 }}>
+          <Skeleton height={14} width={100} rounded="sm" style={{ marginBottom: 8 }} />
+          <Skeleton height={24} width={220} rounded="sm" style={{ marginBottom: 16 }} />
+          <div style={{ display: "grid", gap: 14 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+              <Skeleton height={40} width="100%" rounded="md" />
+              <Skeleton height={40} width="100%" rounded="md" />
+            </div>
+            <Skeleton height={80} width="100%" rounded="md" />
+            <div style={{ display: "flex", gap: 12, marginTop: 8 }}>
+              <Skeleton height={38} width={140} rounded="md" />
+              <Skeleton height={38} width={100} rounded="md" />
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Admin Monetization Skeleton
+ */
+export function AdminMonetizationSkeleton() {
+  return (
+    <div className="admin-monetization-skeleton" aria-busy="true" aria-label="Загрузка монетизации">
+      <div className="admin-kpi-grid" style={{ marginBottom: 24 }}>
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="admin-kpi skeleton-card-item">
+            <Skeleton height={12} width={90} rounded="sm" style={{ marginBottom: 8 }} />
+            <Skeleton height={30} width={60} rounded="md" style={{ marginBottom: 8 }} />
+            <Skeleton height={11} width={130} rounded="sm" />
+          </div>
+        ))}
+      </div>
+      <section className="admin-section" style={{ marginBottom: 24 }}>
+        <Skeleton height={20} width={160} rounded="sm" style={{ marginBottom: 16 }} />
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 16 }}>
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="admin-panel" style={{ padding: 20 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12 }}>
+                <Skeleton height={22} width={100} rounded="sm" />
+                <Skeleton height={20} width={60} rounded="full" />
+              </div>
+              <Skeleton height={28} width={120} rounded="sm" style={{ marginBottom: 12 }} />
+              <div style={{ display: "grid", gap: 8, marginBottom: 16 }}>
+                <Skeleton height={14} width="90%" rounded="sm" />
+                <Skeleton height={14} width="75%" rounded="sm" />
+                <Skeleton height={14} width="85%" rounded="sm" />
+              </div>
+              <Skeleton height={36} width="100%" rounded="md" />
+            </div>
+          ))}
+        </div>
+      </section>
+    </div>
+  );
+}
+
+/**
+ * Admin Fees / Economics Skeleton
+ */
+export function AdminFeesSkeleton() {
+  return (
+    <div className="admin-fees-skeleton" aria-busy="true" aria-label="Загрузка комиссий и экономики">
+      <div className="admin-quick-grid" style={{ marginBottom: 24 }}>
+        <section className="admin-panel" style={{ padding: 20 }}>
+          <Skeleton height={14} width={120} rounded="sm" style={{ marginBottom: 8 }} />
+          <Skeleton height={22} width={180} rounded="sm" style={{ marginBottom: 12 }} />
+          <Skeleton height={14} width="90%" rounded="sm" style={{ marginBottom: 16 }} />
+          <div style={{ display: "grid", gap: 10 }}>
+            <Skeleton height={38} width="100%" rounded="md" />
+            <Skeleton height={38} width="100%" rounded="md" />
+          </div>
+        </section>
+        <section className="admin-panel" style={{ padding: 20 }}>
+          <Skeleton height={14} width={120} rounded="sm" style={{ marginBottom: 8 }} />
+          <Skeleton height={22} width={180} rounded="sm" style={{ marginBottom: 12 }} />
+          <Skeleton height={14} width="90%" rounded="sm" style={{ marginBottom: 16 }} />
+          <div style={{ display: "grid", gap: 10 }}>
+            <Skeleton height={38} width="100%" rounded="md" />
+            <Skeleton height={38} width="100%" rounded="md" />
+          </div>
+        </section>
+      </div>
+      <AdminTableSkeleton columns={["Версия", "Комиссия платформы", "Мин. комиссия", "Плательщик", "Статус", "Действие"]} rowCount={3} />
+    </div>
+  );
+}
+
+/**
+ * Admin Payment Routing Skeleton
+ */
+export function AdminPaymentRoutingSkeleton() {
+  return (
+    <div className="admin-routing-skeleton" aria-busy="true" aria-label="Загрузка маршрутизации платежей">
+      <div className="admin-quick-grid" style={{ marginBottom: 24 }}>
+        {Array.from({ length: 3 }).map((_, i) => (
+          <section key={i} className="admin-panel" style={{ padding: 20 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12 }}>
+              <Skeleton height={20} width={120} rounded="sm" />
+              <Skeleton height={20} width={70} rounded="full" />
+            </div>
+            <Skeleton height={14} width="80%" rounded="sm" style={{ marginBottom: 16 }} />
+            <Skeleton height={38} width="100%" rounded="md" />
+          </section>
+        ))}
+      </div>
+      <AdminTableSkeleton columns={["Домен платежа", "Основной провайдер", "Резервный", "Статус", "Действие"]} rowCount={4} />
+    </div>
+  );
+}
+
+/**
+ * Admin Taxonomy Skeleton
+ */
+export function AdminTaxonomySkeleton() {
+  return (
+    <div className="admin-taxonomy-skeleton" aria-busy="true" aria-label="Загрузка категорий и навыков">
+      <div className="admin-quick-grid admin-taxonomy-create" style={{ marginBottom: 24 }}>
+        <section className="admin-panel admin-taxonomy-card" style={{ padding: 20 }}>
+          <Skeleton height={14} width={120} rounded="sm" style={{ marginBottom: 8 }} />
+          <div style={{ display: "grid", gap: 10 }}>
+            <Skeleton height={38} width="100%" rounded="md" />
+            <Skeleton height={38} width="100%" rounded="md" />
+            <Skeleton height={60} width="100%" rounded="md" />
+            <Skeleton height={36} width={140} rounded="md" />
+          </div>
+        </section>
+        <section className="admin-panel admin-taxonomy-card" style={{ padding: 20 }}>
+          <Skeleton height={14} width={100} rounded="sm" style={{ marginBottom: 8 }} />
+          <div style={{ display: "grid", gap: 10 }}>
+            <Skeleton height={38} width="100%" rounded="md" />
+            <Skeleton height={38} width="100%" rounded="md" />
+            <Skeleton height={60} width="100%" rounded="md" />
+            <Skeleton height={36} width={120} rounded="md" />
+          </div>
+        </section>
+      </div>
+      <div style={{ marginBottom: 24 }}>
+        <Skeleton height={22} width={130} rounded="sm" style={{ marginBottom: 12 }} />
+        <AdminTableSkeleton columns={["Название", "Slug", "Порядок", "Статус", "Действие"]} rowCount={4} />
+      </div>
+      <div>
+        <Skeleton height={22} width={100} rounded="sm" style={{ marginBottom: 12 }} />
+        <AdminTableSkeleton columns={["Навык", "Slug", "Статус", "Действие"]} rowCount={4} />
+      </div>
+    </div>
+  );
+}
+

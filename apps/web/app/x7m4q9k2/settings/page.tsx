@@ -4,7 +4,7 @@ import { CSSProperties, FormEvent, useCallback, useEffect, useState } from "reac
 import {
   AdminError,
   AdminHeader,
-  AdminLoading,
+  AdminSettingsSkeleton,
   adminRequest,
 } from "../admin-ui";
 import {
@@ -461,7 +461,7 @@ export default function ProjectSettingsPage() {
       </div>
 
       {loading ? (
-        <AdminLoading />
+        <AdminSettingsSkeleton />
       ) : error ? (
         <AdminError message={error} onRetry={load} />
       ) : (

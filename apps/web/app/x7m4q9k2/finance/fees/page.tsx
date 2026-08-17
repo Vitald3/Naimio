@@ -1,7 +1,7 @@
 "use client";
 import { CustomSelect } from "../../../custom-select";
 import { FormEvent, useCallback, useEffect, useState } from "react";
-import { AdminError, AdminHeader, AdminLoading, AdminTable, formatDate, formatMoney } from "../../admin-ui";
+import { AdminError, AdminFeesSkeleton, AdminHeader, AdminTable, formatDate, formatMoney } from "../../admin-ui";
 import { createRandomID } from "../../../random-id";
 import AdminReasonEditor from "../../admin-reason-editor";
 
@@ -213,7 +213,7 @@ export default function FinanceFeesPage() {
       {feeErr ? <p className="form-error" role="alert">{feeErr}</p> : null}
     </section>
 
-    {loadError ? <AdminError message={loadError} onRetry={load} /> : loading ? <AdminLoading /> : <>
+    {loadError ? <AdminError message={loadError} onRetry={load} /> : loading ? <AdminFeesSkeleton /> : <>
       <section className="admin-panel">
         <p className="eyebrow">Версии правил комиссии</p>
         <AdminTable columns={["Версия", "Комиссия", "Мин. / Макс.", "Комиссию платит", "Эквайринг платит", "Статус", "Действует с"]} empty={!fees.length}>

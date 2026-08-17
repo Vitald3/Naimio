@@ -1,4 +1,4 @@
-.PHONY: dev dev-down dev-reset dev-seed test lint build docker-build migrate migrate-up migrate-down test-db web-deps web-check checkpoint-phase2 checkpoint-phase3 checkpoint-phase4 checkpoint-phase5 check-phase6a checkpoint-phase6 checkpoint-phase7 checkpoint-phase8 checkpoint-mvp staging-check staging-deploy staging-smoke staging-backup staging-restore-test load-smoke load-baseline
+.PHONY: dev dev-down dev-reset dev-seed test lint build docker-build migrate migrate-up migrate-down test-db web-deps web-check checkpoint-phase2 checkpoint-phase3 checkpoint-phase4 checkpoint-phase5 check-phase6a checkpoint-phase6 checkpoint-phase7 checkpoint-phase8 checkpoint-mvp staging-check staging-deploy staging-smoke staging-backup staging-restore-test load-smoke load-baseline prod-build prod-up prod-down prod-restart prod-logs prod-status prod-migrate prod-shell-api prod-shell-db prod-backup prod-restore prod-health prod-deploy
 
 dev:
 	docker compose up -d postgres redis
@@ -117,3 +117,77 @@ load-baseline:
 
 
 	./scripts/smoke-public-details.sh
+
+# ============================
+# Production
+# ============================
+
+PROD_COMPOSE=docker compose -f docker-compose.production.yml
+
+prod-deploy:
+	$(PROD_COMPOSE) build web api worker
+	$(PROD_COMPOSE) up -d
+	$(PROD_COMPOSE) run --rm migrate
+	$(PROD_COMPOSE) ps
+
+prod-build:
+	$(PROD_COMPOSE) build web api worker
+
+
+prod-up:
+	$(PROD_COMPOSE) up -d
+
+
+prod-down:
+	$(PROD_COMPOSE) down
+
+
+prod-restart:
+	$(PROD_COMPOSE) restart
+
+
+prod-logs:
+	$(PROD_COMPOSE) logs -f --tail=200
+
+
+prod-status:
+	$(PROD_COMPOSE) ps
+
+
+prod-migrate:
+	$(PROD_COMPOSE) up -d postgres
+	$(PROD_COMPOSE) run --rm migrate
+
+
+prod-health:
+	@echo "Checking production containers..."
+	$(PROD_COMPOSE) ps
+	@echo ""
+	@echo "Checking API..."
+	curl -fsS http://127.0.0.1:8080/health || true
+	@echo ""
+	@echo "Checking Web..."
+	curl -fsS http://127.0.0.1:3000 || true
+
+
+prod-shell-api:
+	$(PROD_COMPOSE) exec api sh
+
+
+prod-shell-db:
+	$(PROD_COMPOSE) exec postgres psql -U $${POSTGRES_USER} -d $${POSTGRES_DB}
+
+
+prod-backup:
+	@mkdir -p backups
+	$(PROD_COMPOSE) exec -T postgres pg_dump \
+		-U $${POSTGRES_USER} \
+		-d $${POSTGRES_DB} \
+		> backups/postgres_$$(date +%Y%m%d_%H%M%S).sql
+
+
+prod-restore:
+	@test -n "$(FILE)" || (echo "Usage: make prod-restore FILE=backup.sql"; exit 1)
+	cat $(FILE) | $(PROD_COMPOSE) exec -T postgres psql \
+		-U $${POSTGRES_USER} \
+		-d $${POSTGRES_DB}
