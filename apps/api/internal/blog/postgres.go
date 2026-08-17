@@ -65,7 +65,7 @@ func scanPost(row interface{ Scan(...any) error }) (Post, error) {
 		p.ReadingMinutes = 1
 	}
 	if p.CoverMediaObjectID != "" {
-		p.CoverURL = "/api/v1/blog/media/" + p.CoverMediaObjectID
+		p.CoverURL = "/api/v1/media/" + p.CoverMediaObjectID
 	}
 	p.Tags = []Tag{}
 	return p, nil
@@ -128,7 +128,7 @@ func (r PostgresRepository) ListPublic(ctx context.Context, category string, pag
 			p.ReadingMinutes = 1
 		}
 		if p.CoverMediaObjectID != "" {
-			p.CoverURL = "/api/v1/blog/media/" + p.CoverMediaObjectID
+			p.CoverURL = "/api/v1/media/" + p.CoverMediaObjectID
 		}
 		p.Tags = []Tag{}
 		items = append(items, p)
@@ -189,7 +189,7 @@ func (r PostgresRepository) ListAdmin(ctx context.Context, status string, page, 
 			p.Category = &Category{ID: catID, Name: catName, Slug: catSlug}
 		}
 		if p.CoverMediaObjectID != "" {
-			p.CoverURL = "/api/v1/blog/media/" + p.CoverMediaObjectID
+			p.CoverURL = "/api/v1/media/" + p.CoverMediaObjectID
 		}
 		p.Tags = []Tag{}
 		out = append(out, p)

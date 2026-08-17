@@ -35,6 +35,14 @@ SELECT id::text, owner_user_id::text, purpose, COALESCE(storage_provider, 'local
 FROM media_objects WHERE id = $1 AND owner_user_id = $2 AND deleted_at IS NULL`, mediaID, actorID))
 }
 
+func (r PostgresRepository) GetPublic(ctx context.Context, mediaID string) (Object, error) {
+	return scanObject(r.DB.QueryRowContext(ctx, `
+SELECT id::text, owner_user_id::text, purpose, COALESCE(storage_provider, 'local'), COALESCE(storage_backend_id::text, ''), object_key, bucket, COALESCE(original_filename, ''),
+  mime_type, size_bytes, scan_status, uploaded_at, created_at, updated_at, deleted_at
+FROM media_objects
+WHERE id = $1 AND deleted_at IS NULL AND uploaded_at IS NOT NULL AND scan_status = 'CLEAN'`, mediaID))
+}
+
 func (r PostgresRepository) MarkUploaded(ctx context.Context, actorID, mediaID string, at time.Time) (Object, error) {
 	return scanObject(r.DB.QueryRowContext(ctx, `
 UPDATE media_objects SET uploaded_at = COALESCE(uploaded_at, $3), updated_at = $3

@@ -10,6 +10,7 @@ import (
 	"log"
 	"net/http"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -21,6 +22,76 @@ var uuidPattern = regexp.MustCompile(`^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a
 type Handler struct {
 	Service  Service
 	Database *sql.DB
+}
+
+func (h Handler) ServeMedia(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet && r.Method != http.MethodHead {
+		writeError(w, r, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "method not allowed")
+		return
+	}
+
+	path := r.URL.Path
+	if strings.HasPrefix(path, "/api/v1/blog/media/") {
+		path = strings.TrimPrefix(path, "/api/v1/blog/media/")
+	} else if strings.HasPrefix(path, "/api/v1/media/") {
+		path = strings.TrimPrefix(path, "/api/v1/media/")
+	} else {
+		path = strings.Trim(path, "/")
+		if idx := strings.LastIndex(path, "/"); idx != -1 {
+			path = path[idx+1:]
+		}
+	}
+	mediaID := strings.Trim(path, "/")
+	if !validUUID(mediaID) {
+		writeError(w, r, http.StatusNotFound, "NOT_FOUND", "media not found")
+		return
+	}
+
+	object, err := h.Service.Repository.GetPublic(r.Context(), mediaID)
+	if err != nil {
+		if errors.Is(err, ErrNotFound) {
+			writeError(w, r, http.StatusNotFound, "NOT_FOUND", "media not found")
+			return
+		}
+		writeDomainError(w, r, err)
+		return
+	}
+
+	st := h.Service.storageFor(r.Context(), object.StorageProvider, object.Bucket, object.StorageBackendID)
+	stream, size, mime, err := st.Open(r.Context(), object.ObjectKey)
+	if err != nil {
+		if errors.Is(err, ErrStorageMissing) {
+			writeError(w, r, http.StatusNotFound, "NOT_FOUND", "media not found")
+			return
+		}
+		writeDomainError(w, r, err)
+		return
+	}
+	defer stream.Close()
+
+	mimeType := object.MIMEType
+	if mimeType == "" {
+		mimeType = mime
+	}
+	if mimeType == "" {
+		mimeType = "application/octet-stream"
+	}
+
+	sizeBytes := object.SizeBytes
+	if sizeBytes <= 0 {
+		sizeBytes = size
+	}
+
+	w.Header().Set("Content-Type", mimeType)
+	if sizeBytes > 0 {
+		w.Header().Set("Content-Length", strconv.FormatInt(sizeBytes, 10))
+	}
+	w.Header().Set("Cache-Control", "public, max-age=86400")
+	w.WriteHeader(http.StatusOK)
+
+	if r.Method == http.MethodGet {
+		_, _ = io.Copy(w, stream)
+	}
 }
 
 func (h Handler) Avatar(w http.ResponseWriter, r *http.Request) {

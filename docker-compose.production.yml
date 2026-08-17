@@ -150,7 +150,7 @@ services:
       - default
     volumes:
       - pgadmin_data:/var/lib/pgadmin
-    restart: unless-stoppedЈ
+    restart: unless-stopped
 
   worker:
     build: ./worker

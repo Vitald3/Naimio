@@ -22,11 +22,15 @@ func safeLink(raw string) bool {
 	return err == nil && (u.Scheme == "http" || u.Scheme == "https" || u.Scheme == "mailto")
 }
 func safeImage(raw string) bool {
-	if !strings.HasPrefix(raw, "/api/v1/blog/media/") {
-		return false
+	if strings.HasPrefix(raw, "/api/v1/media/") {
+		id := strings.TrimPrefix(raw, "/api/v1/media/")
+		return regexpUUID.MatchString(id)
 	}
-	id := strings.TrimPrefix(raw, "/api/v1/blog/media/")
-	return regexpUUID.MatchString(id)
+	if strings.HasPrefix(raw, "/api/v1/blog/media/") {
+		id := strings.TrimPrefix(raw, "/api/v1/blog/media/")
+		return regexpUUID.MatchString(id)
+	}
+	return false
 }
 
 var regexpUUID = regexp.MustCompile(`^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$`)

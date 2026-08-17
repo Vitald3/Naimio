@@ -327,7 +327,7 @@ func main() {
 	}
 	authHandler.AvatarDeleter = mediaService
 	mediaHandler := media.Handler{Service: mediaService, Database: database}
-	blogHandler := blog.Handler{Service: blog.Service{Repository: blogRepository}, ActorID: auth.ActorID, Storage: mediaStorage}
+	blogHandler := blog.Handler{Service: blog.Service{Repository: blogRepository}, ActorID: auth.ActorID, Storage: mediaStorage, MediaHandler: http.HandlerFunc(mediaHandler.ServeMedia)}
 	monetizationRepository := monetization.PostgresRepository{DB: database}
 	monetizationService := monetization.Service{Repository: monetizationRepository}
 	paymentEnvironment := payments.EnvironmentSandbox
@@ -723,6 +723,9 @@ AND mo.purpose='PORTFOLIO' AND mo.uploaded_at IS NOT NULL AND mo.scan_status='CL
 	mux.Handle("/api/v1/me/portfolio/", protectWrite(http.HandlerFunc(portfolioHandler.Item)))
 	mux.Handle("/api/v1/uploads/presign", protectUpload(http.HandlerFunc(mediaHandler.Presign)))
 	mux.Handle("/api/v1/uploads/", protectUpload(http.HandlerFunc(mediaHandler.Item)))
+	mux.Handle("/api/v1/media", rateMiddleware.Limit(ratelimit.PublicRead, http.HandlerFunc(mediaHandler.ServeMedia)))
+	mux.Handle("/api/v1/media/", rateMiddleware.Limit(ratelimit.PublicRead, http.HandlerFunc(mediaHandler.ServeMedia)))
+	mux.Handle("/api/v1/blog/media/", rateMiddleware.Limit(ratelimit.PublicRead, http.HandlerFunc(mediaHandler.ServeMedia)))
 	mux.Handle("/api/v1/avatars/", rateMiddleware.Limit(ratelimit.PublicRead, http.HandlerFunc(mediaHandler.Avatar)))
 	mux.Handle("/api/v1/services", publicServices)
 	mux.Handle("/api/v1/services/", publicService)

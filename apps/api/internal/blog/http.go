@@ -16,9 +16,10 @@ type MediaStorage interface {
 	PresignGet(context.Context, string, time.Duration) (string, time.Time, error)
 }
 type Handler struct {
-	Service Service
-	ActorID func(context.Context) (string, bool)
-	Storage MediaStorage
+	Service      Service
+	ActorID      func(context.Context) (string, bool)
+	Storage      MediaStorage
+	MediaHandler http.Handler
 }
 
 func (h Handler) actor(r *http.Request) (string, bool) {
@@ -31,21 +32,11 @@ func (h Handler) actor(r *http.Request) (string, bool) {
 func (h Handler) Public(w http.ResponseWriter, r *http.Request) {
 	path := strings.Trim(strings.TrimPrefix(r.URL.Path, "/api/v1/blog"), "/")
 	if strings.HasPrefix(path, "media/") {
-		if r.Method != http.MethodGet || h.Storage == nil {
-			blogError(w, r, 404, "NOT_FOUND", "media not found")
+		if h.MediaHandler != nil {
+			h.MediaHandler.ServeHTTP(w, r)
 			return
 		}
-		key, err := h.Service.Repository.PublicMediaKey(r.Context(), strings.TrimPrefix(path, "media/"))
-		if blogHandle(w, r, err) {
-			return
-		}
-		u, _, err := h.Storage.PresignGet(r.Context(), key, 5*time.Minute)
-		if err != nil {
-			blogHandle(w, r, err)
-			return
-		}
-		w.Header().Set("Cache-Control", "public, max-age=300")
-		http.Redirect(w, r, u, http.StatusTemporaryRedirect)
+		blogError(w, r, 404, "NOT_FOUND", "media not found")
 		return
 	}
 	if r.Method != http.MethodGet {

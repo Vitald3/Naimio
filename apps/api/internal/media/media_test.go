@@ -189,3 +189,178 @@ func TestPendingObjectCannotBeMarkedClean(t *testing.T) {
 		t.Fatalf("error = %v", err)
 	}
 }
+
+func TestServeMedia(t *testing.T) {
+	service, repository, storage := testService()
+	handler := Handler{Service: service}
+	now := time.Now().UTC()
+	testData := []byte("fake-jpeg-image-binary-data")
+	testKey := "blog_cover/" + ownerID + "/" + mediaID + ".jpg"
+
+	cleanObj := Object{
+		ID:         mediaID,
+		OwnerID:    ownerID,
+		Purpose:    PurposeBlogCover,
+		ObjectKey:  testKey,
+		MIMEType:   "image/jpeg",
+		SizeBytes:  int64(len(testData)),
+		ScanStatus: ScanClean,
+		UploadedAt: &now,
+	}
+
+	storage.Objects[testKey] = StoredObject{
+		SizeBytes: int64(len(testData)),
+		MIMEType:  "image/jpeg",
+		Data:      testData,
+	}
+
+	t.Run("clean object returns 200 with headers and body", func(t *testing.T) {
+		repository.Objects[mediaID] = cleanObj
+		req := httptest.NewRequest(http.MethodGet, "/api/v1/media/"+mediaID, nil)
+		res := httptest.NewRecorder()
+		handler.ServeMedia(res, req)
+
+		if res.Code != http.StatusOK {
+			t.Fatalf("expected 200, got %d", res.Code)
+		}
+		if res.Header().Get("Content-Type") != "image/jpeg" {
+			t.Fatalf("expected image/jpeg, got %s", res.Header().Get("Content-Type"))
+		}
+		if res.Header().Get("Content-Length") != "27" {
+			t.Fatalf("expected Content-Length 27, got %s", res.Header().Get("Content-Length"))
+		}
+		if res.Header().Get("Cache-Control") != "public, max-age=86400" {
+			t.Fatalf("expected Cache-Control public, max-age=86400, got %s", res.Header().Get("Cache-Control"))
+		}
+		if res.Body.String() != string(testData) {
+			t.Fatalf("body mismatch: got %q, want %q", res.Body.String(), string(testData))
+		}
+	})
+
+	t.Run("blog media legacy path returns 200", func(t *testing.T) {
+		repository.Objects[mediaID] = cleanObj
+		req := httptest.NewRequest(http.MethodGet, "/api/v1/blog/media/"+mediaID, nil)
+		res := httptest.NewRecorder()
+		handler.ServeMedia(res, req)
+
+		if res.Code != http.StatusOK {
+			t.Fatalf("expected 200, got %d", res.Code)
+		}
+		if res.Body.String() != string(testData) {
+			t.Fatalf("body mismatch: got %q, want %q", res.Body.String(), string(testData))
+		}
+	})
+
+	t.Run("head method returns headers and empty body", func(t *testing.T) {
+		repository.Objects[mediaID] = cleanObj
+		req := httptest.NewRequest(http.MethodHead, "/api/v1/media/"+mediaID, nil)
+		res := httptest.NewRecorder()
+		handler.ServeMedia(res, req)
+
+		if res.Code != http.StatusOK {
+			t.Fatalf("expected 200, got %d", res.Code)
+		}
+		if res.Header().Get("Content-Type") != "image/jpeg" {
+			t.Fatalf("expected image/jpeg, got %s", res.Header().Get("Content-Type"))
+		}
+		if res.Body.Len() != 0 {
+			t.Fatalf("expected empty body for HEAD, got %d bytes", res.Body.Len())
+		}
+	})
+
+	t.Run("pending status returns 404", func(t *testing.T) {
+		pendingObj := cleanObj
+		pendingObj.ScanStatus = ScanPending
+		repository.Objects[mediaID] = pendingObj
+		req := httptest.NewRequest(http.MethodGet, "/api/v1/media/"+mediaID, nil)
+		res := httptest.NewRecorder()
+		handler.ServeMedia(res, req)
+
+		if res.Code != http.StatusNotFound {
+			t.Fatalf("expected 404 for pending, got %d", res.Code)
+		}
+	})
+
+	t.Run("infected status returns 404", func(t *testing.T) {
+		infectedObj := cleanObj
+		infectedObj.ScanStatus = ScanInfected
+		repository.Objects[mediaID] = infectedObj
+		req := httptest.NewRequest(http.MethodGet, "/api/v1/media/"+mediaID, nil)
+		res := httptest.NewRecorder()
+		handler.ServeMedia(res, req)
+
+		if res.Code != http.StatusNotFound {
+			t.Fatalf("expected 404 for infected, got %d", res.Code)
+		}
+	})
+
+	t.Run("deleted object returns 404", func(t *testing.T) {
+		deletedObj := cleanObj
+		deletedObj.DeletedAt = &now
+		repository.Objects[mediaID] = deletedObj
+		req := httptest.NewRequest(http.MethodGet, "/api/v1/media/"+mediaID, nil)
+		res := httptest.NewRecorder()
+		handler.ServeMedia(res, req)
+
+		if res.Code != http.StatusNotFound {
+			t.Fatalf("expected 404 for deleted, got %d", res.Code)
+		}
+	})
+
+	t.Run("not uploaded object returns 404", func(t *testing.T) {
+		notUploadedObj := cleanObj
+		notUploadedObj.UploadedAt = nil
+		repository.Objects[mediaID] = notUploadedObj
+		req := httptest.NewRequest(http.MethodGet, "/api/v1/media/"+mediaID, nil)
+		res := httptest.NewRecorder()
+		handler.ServeMedia(res, req)
+
+		if res.Code != http.StatusNotFound {
+			t.Fatalf("expected 404 for not uploaded, got %d", res.Code)
+		}
+	})
+
+	t.Run("non existent object returns 404", func(t *testing.T) {
+		delete(repository.Objects, mediaID)
+		req := httptest.NewRequest(http.MethodGet, "/api/v1/media/"+mediaID, nil)
+		res := httptest.NewRecorder()
+		handler.ServeMedia(res, req)
+
+		if res.Code != http.StatusNotFound {
+			t.Fatalf("expected 404 for non-existent, got %d", res.Code)
+		}
+	})
+
+	t.Run("invalid UUID returns 404", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodGet, "/api/v1/media/not-a-uuid", nil)
+		res := httptest.NewRecorder()
+		handler.ServeMedia(res, req)
+
+		if res.Code != http.StatusNotFound {
+			t.Fatalf("expected 404 for invalid UUID, got %d", res.Code)
+		}
+	})
+
+	t.Run("method not allowed returns 405", func(t *testing.T) {
+		repository.Objects[mediaID] = cleanObj
+		req := httptest.NewRequest(http.MethodPost, "/api/v1/media/"+mediaID, nil)
+		res := httptest.NewRecorder()
+		handler.ServeMedia(res, req)
+
+		if res.Code != http.StatusMethodNotAllowed {
+			t.Fatalf("expected 405 for POST, got %d", res.Code)
+		}
+	})
+
+	t.Run("missing storage object returns 404", func(t *testing.T) {
+		repository.Objects[mediaID] = cleanObj
+		delete(storage.Objects, testKey)
+		req := httptest.NewRequest(http.MethodGet, "/api/v1/media/"+mediaID, nil)
+		res := httptest.NewRecorder()
+		handler.ServeMedia(res, req)
+
+		if res.Code != http.StatusNotFound {
+			t.Fatalf("expected 404 for missing storage file, got %d", res.Code)
+		}
+	})
+}

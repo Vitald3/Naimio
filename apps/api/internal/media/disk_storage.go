@@ -54,6 +54,26 @@ func (s *DiskStorage) Delete(_ context.Context, key string) error {
 	_ = os.Remove(path + ".mime")
 	return nil
 }
+func (s *DiskStorage) Open(_ context.Context, key string) (io.ReadCloser, int64, string, error) {
+	path, ok := s.path(key)
+	if !ok {
+		return nil, 0, "", ErrStorageMissing
+	}
+	f, err := os.Open(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, 0, "", ErrStorageMissing
+		}
+		return nil, 0, "", err
+	}
+	info, err := f.Stat()
+	if err != nil {
+		_ = f.Close()
+		return nil, 0, "", err
+	}
+	mimeBytes, _ := os.ReadFile(path + ".mime")
+	return f, info.Size(), strings.TrimSpace(string(mimeBytes)), nil
+}
 func (s *DiskStorage) Put(_ context.Context, key, mime string, data []byte) error {
 	path, ok := s.path(key)
 	if !ok {

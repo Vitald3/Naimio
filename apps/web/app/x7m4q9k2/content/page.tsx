@@ -205,7 +205,7 @@ function PostEditor({
       setValue((v) => ({
         ...v,
         cover_media_object_id: x.media_id,
-        cover_url: `/api/v1/blog/media/${x.media_id}`,
+        cover_url: `/api/v1/media/${x.media_id}`,
       }));
       push({
         kind: "success",
@@ -482,7 +482,7 @@ function PostEditor({
             <div className="cms-cover-preview-box" style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 16 }}>
               <div style={{ position: "relative", width: 140, height: 80, borderRadius: 8, overflow: "hidden", border: "1px solid var(--border-subtle, rgba(0,0,0,0.1))" }}>
                 <Image
-                  src={value.cover_url || `/api/v1/blog/media/${value.cover_media_object_id}`}
+                  src={value.cover_url || `/api/v1/media/${value.cover_media_object_id}`}
                   alt={value.cover_alt || "Обложка"}
                   fill
                   sizes="140px"

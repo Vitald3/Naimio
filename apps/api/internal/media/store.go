@@ -1,6 +1,7 @@
 package media
 
 import (
+	"bytes"
 	"context"
 	"io"
 	"net/http"
@@ -33,6 +34,16 @@ func (s *Store) GetOwned(_ context.Context, actorID, mediaID string) (Object, er
 	defer s.mu.RUnlock()
 	object, ok := s.Objects[mediaID]
 	if !ok || object.OwnerID != actorID || object.DeletedAt != nil {
+		return Object{}, ErrNotFound
+	}
+	return object, nil
+}
+
+func (s *Store) GetPublic(_ context.Context, mediaID string) (Object, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	object, ok := s.Objects[mediaID]
+	if !ok || object.DeletedAt != nil || object.UploadedAt == nil || object.ScanStatus != ScanClean {
 		return Object{}, ErrNotFound
 	}
 	return object, nil
@@ -116,6 +127,16 @@ func (s *MemoryStorage) Delete(_ context.Context, key string) error {
 	}
 	delete(s.Objects, key)
 	return nil
+}
+
+func (s *MemoryStorage) Open(_ context.Context, key string) (io.ReadCloser, int64, string, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	object, ok := s.Objects[key]
+	if !ok {
+		return nil, 0, "", ErrStorageMissing
+	}
+	return io.NopCloser(bytes.NewReader(object.Data)), object.SizeBytes, object.MIMEType, nil
 }
 
 func (s *MemoryStorage) url(action, key string) string {

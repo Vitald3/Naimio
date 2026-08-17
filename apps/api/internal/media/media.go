@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"io"
 	"path/filepath"
 	"slices"
 	"strings"
@@ -87,6 +88,7 @@ type Storage interface {
 	Inspect(context.Context, string) (StoredObject, error)
 	PresignGet(context.Context, string, time.Duration) (string, time.Time, error)
 	Delete(context.Context, string) error
+	Open(context.Context, string) (io.ReadCloser, int64, string, error)
 }
 
 type StorageProviderResolver interface {
@@ -102,6 +104,7 @@ type StorageBackendResolver interface {
 type Repository interface {
 	Create(context.Context, Object) (Object, error)
 	GetOwned(context.Context, string, string) (Object, error)
+	GetPublic(context.Context, string) (Object, error)
 	MarkUploaded(context.Context, string, string, time.Time) (Object, error)
 	MarkScanResult(context.Context, string, string) error
 	Delete(context.Context, string, string, time.Time) error

@@ -122,7 +122,7 @@ load-baseline:
 # Production
 # ============================
 
-PROD_COMPOSE=docker compose -f docker-compose.production.yml
+PROD_COMPOSE=docker compose --env-file .env.production -f docker-compose.production.yml
 
 prod-deploy:
 	$(PROD_COMPOSE) build web api worker

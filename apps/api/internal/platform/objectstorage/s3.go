@@ -176,6 +176,24 @@ func (s *S3) Delete(ctx context.Context, key string) error {
 	return nil
 }
 
+func (s *S3) Open(ctx context.Context, key string) (io.ReadCloser, int64, string, error) {
+	resp, err := s.do(ctx, http.MethodGet, key, nil)
+	if err != nil {
+		return nil, 0, "", err
+	}
+	if resp.StatusCode == http.StatusNotFound {
+		_ = resp.Body.Close()
+		return nil, 0, "", ErrStorageMissing
+	}
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		_ = resp.Body.Close()
+		return nil, 0, "", fmt.Errorf("object storage GET returned %d", resp.StatusCode)
+	}
+	size, _ := strconv.ParseInt(resp.Header.Get("Content-Length"), 10, 64)
+	mime := resp.Header.Get("Content-Type")
+	return resp.Body, size, mime, nil
+}
+
 func (s *S3) Put(ctx context.Context, key, mime string, data []byte) error {
 	now := s.now().UTC()
 	timestamp, date := now.Format("20060102T150405Z"), now.Format("20060102")

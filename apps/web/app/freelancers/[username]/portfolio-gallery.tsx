@@ -14,7 +14,7 @@ export default function PortfolioGallery({username,subjectUserID,items}:{usernam
   const [workIndex,setWorkIndex]=useState<number|null>(null);
   const [imageIndex,setImageIndex]=useState(0);
   const active=workIndex===null?null:items[workIndex];
-  const mediaURL=(work:PortfolioGalleryItem,mediaID:string)=>`/api/v1/profiles/${encodeURIComponent(username)}/portfolio/${work.id}/media/${mediaID}`;
+  const mediaURL=(_work:PortfolioGalleryItem,mediaID:string)=>`/api/v1/media/${mediaID}`;
   function open(index:number){setWorkIndex(index);setImageIndex(0)}
   function close(){setWorkIndex(null);setImageIndex(0)}
   function changeWork(offset:number){if(workIndex===null)return;setWorkIndex((workIndex+offset+items.length)%items.length);setImageIndex(0)}

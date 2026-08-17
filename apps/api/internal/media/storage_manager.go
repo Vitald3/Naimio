@@ -130,6 +130,17 @@ func (a *s3Adapter) Delete(ctx context.Context, key string) error {
 	return err
 }
 
+func (a *s3Adapter) Open(ctx context.Context, key string) (io.ReadCloser, int64, string, error) {
+	rc, size, mime, err := a.client.Open(ctx, key)
+	if err != nil {
+		if errors.Is(err, objectstorage.ErrStorageMissing) {
+			return nil, 0, "", ErrStorageMissing
+		}
+		return nil, 0, "", err
+	}
+	return rc, size, mime, nil
+}
+
 func (a *s3Adapter) WithBucket(bucket string) Storage {
 	if a.client == nil || bucket == "" || bucket == a.client.Bucket() {
 		return a
@@ -512,6 +523,23 @@ func (m *StorageManager) Delete(ctx context.Context, key string) error {
 		return lastErr
 	}
 	return ErrStorageMissing
+}
+
+func (m *StorageManager) Open(ctx context.Context, key string) (io.ReadCloser, int64, string, error) {
+	m.mu.RLock()
+	localSt := m.localStorage
+	s3St := m.s3Storage
+	m.mu.RUnlock()
+
+	if localSt != nil {
+		if rc, size, mime, err := localSt.Open(ctx, key); err == nil {
+			return rc, size, mime, nil
+		}
+	}
+	if s3St != nil {
+		return s3St.Open(ctx, key)
+	}
+	return nil, 0, "", ErrStorageMissing
 }
 
 func (m *StorageManager) GetSettings(_ context.Context) (StorageSettings, error) {
