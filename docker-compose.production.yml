@@ -1,0 +1,226 @@
+services:
+  web:
+    build: ./apps/web
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      API_BASE_URL: http://api:8080
+      NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-${PUBLIC_BASE_URL:-https://naimio.ru}}
+    ports:
+      - "127.0.0.1:3000:3000"
+    networks: [app]
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  api:
+    build: ./apps/api
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+    environment:
+      APP_ENV: ${APP_ENV:-production}
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:?set PUBLIC_BASE_URL}
+      DATABASE_URL: postgres://freelance:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}@postgres:5432/freelance?sslmode=disable
+      REDIS_URL: redis://:${REDIS_PASSWORD:?set REDIS_PASSWORD}@redis:6379/0
+      DB_MAX_OPEN_CONNS: ${DB_MAX_OPEN_CONNS:-20}
+      DB_MAX_IDLE_CONNS: ${DB_MAX_IDLE_CONNS:-5}
+      DB_CONN_MAX_LIFETIME: ${DB_CONN_MAX_LIFETIME:-30m}
+      DB_CONN_MAX_IDLE_TIME: ${DB_CONN_MAX_IDLE_TIME:-5m}
+      SESSION_COOKIE_NAME: ${SESSION_COOKIE_NAME:-naimio_session}
+      ADMIN_SESSION_COOKIE_NAME: ${ADMIN_SESSION_COOKIE_NAME:-naimio_admin_session}
+      OBJECT_STORAGE_ENDPOINT: ${OBJECT_STORAGE_ENDPOINT:-}
+      OBJECT_STORAGE_REGION: ${OBJECT_STORAGE_REGION:-}
+      OBJECT_STORAGE_BUCKET: ${OBJECT_STORAGE_BUCKET:-}
+      OBJECT_STORAGE_ACCESS_KEY: ${OBJECT_STORAGE_ACCESS_KEY:-}
+      OBJECT_STORAGE_SECRET_KEY: ${OBJECT_STORAGE_SECRET_KEY:-}
+      OBJECT_STORAGE_SESSION_TOKEN: ${OBJECT_STORAGE_SESSION_TOKEN:-}
+      STORAGE_MASTER_KEY: ${STORAGE_MASTER_KEY:-}
+      DEV_MEDIA_ROOT: /var/lib/naimio-media
+      SAFE_DEAL_PROVIDER: ${SAFE_DEAL_PROVIDER:-disabled}
+      SAFE_DEAL_WEBHOOK_SECRET: ${SAFE_DEAL_WEBHOOK_SECRET:-}
+      PAYMENT_CONFIG_MASTER_KEY: ${PAYMENT_CONFIG_MASTER_KEY:-}
+      # Payment provider credentials (API only, never exposed to web or worker)
+      YOOKASSA_SHOP_ID: ${YOOKASSA_SHOP_ID:-}
+      YOOKASSA_SECRET_KEY: ${YOOKASSA_SECRET_KEY:-}
+      YOOKASSA_BASE_URL: ${YOOKASSA_BASE_URL:-https://api.yookassa.ru/v3}
+      TBANK_TERMINAL_KEY: ${TBANK_TERMINAL_KEY:-}
+      TBANK_PASSWORD: ${TBANK_PASSWORD:-}
+      TBANK_BASE_URL: ${TBANK_BASE_URL:-https://securepay.tinkoff.ru/v2}
+      TBANK_NOMINAL_BEARER_TOKEN: ${TBANK_NOMINAL_BEARER_TOKEN:-}
+      TBANK_NOMINAL_ACCOUNT_NUMBER: ${TBANK_NOMINAL_ACCOUNT_NUMBER:-}
+      TBANK_NOMINAL_BASE_URL: ${TBANK_NOMINAL_BASE_URL:-https://secured-openapi.tbank.ru}
+      TBANK_NOMINAL_CLIENT_CERT_FILE: ${TBANK_NOMINAL_CLIENT_CERT_FILE:-}
+      TBANK_NOMINAL_CLIENT_KEY_FILE: ${TBANK_NOMINAL_CLIENT_KEY_FILE:-}
+      CLOUDPAYMENTS_PUBLIC_ID: ${CLOUDPAYMENTS_PUBLIC_ID:-}
+      CLOUDPAYMENTS_API_SECRET: ${CLOUDPAYMENTS_API_SECRET:-}
+      CLOUDPAYMENTS_BASE_URL: ${CLOUDPAYMENTS_BASE_URL:-https://api.cloudpayments.ru}
+      YANDEX_PAY_API_KEY: ${YANDEX_PAY_API_KEY:-}
+      YANDEX_PAY_MERCHANT_ID: ${YANDEX_PAY_MERCHANT_ID:-}
+      YANDEX_PAY_JWKS_URL: ${YANDEX_PAY_JWKS_URL:-}
+      YANDEX_PAY_BASE_URL: ${YANDEX_PAY_BASE_URL:-}
+      ROBOKASSA_LOGIN: ${ROBOKASSA_LOGIN:-}
+      ROBOKASSA_PASSWORD1: ${ROBOKASSA_PASSWORD1:-}
+      ROBOKASSA_PASSWORD2: ${ROBOKASSA_PASSWORD2:-}
+      ROBOKASSA_PASSWORD3: ${ROBOKASSA_PASSWORD3:-}
+      ROBOKASSA_BASE_URL: ${ROBOKASSA_BASE_URL:-https://auth.robokassa.ru/Merchant/Index.aspx}
+      ROBOKASSA_SERVICES_BASE_URL: ${ROBOKASSA_SERVICES_BASE_URL:-https://services.robokassa.ru}
+      PAYMENT_RECONCILIATION_TOKEN: ${PAYMENT_RECONCILIATION_TOKEN:-}
+      PRO_RENEWAL_TOKEN: ${PRO_RENEWAL_TOKEN:-}
+      # AI & Smart Matching
+      AI_ESTIMATE_BASELINES_JSON: ${AI_ESTIMATE_BASELINES_JSON:-}
+      AI_PROJECT_BRIEF_ENABLED: ${AI_PROJECT_BRIEF_ENABLED:-true}
+      AI_PROJECT_BRIEF_PROVIDER: ${AI_PROJECT_BRIEF_PROVIDER:-deterministic}
+      AI_PROJECT_BRIEF_MODEL: ${AI_PROJECT_BRIEF_MODEL:-rules-v1}
+      AI_PROJECT_IMPORT_ENABLED: ${AI_PROJECT_IMPORT_ENABLED:-true}
+      AI_PROJECT_IMPORT_PROVIDER: ${AI_PROJECT_IMPORT_PROVIDER:-deterministic}
+      AI_PROJECT_IMPORT_MODEL: ${AI_PROJECT_IMPORT_MODEL:-rules-v1}
+      AI_ESTIMATE_ENABLED: ${AI_ESTIMATE_ENABLED:-true}
+      AI_ESTIMATE_PROVIDER: ${AI_ESTIMATE_PROVIDER:-deterministic}
+      AI_ESTIMATE_MODEL: ${AI_ESTIMATE_MODEL:-rules-v1}
+      AI_OFFER_ANALYSIS_ENABLED: ${AI_OFFER_ANALYSIS_ENABLED:-true}
+      AI_OFFER_ANALYSIS_PROVIDER: ${AI_OFFER_ANALYSIS_PROVIDER:-deterministic}
+      AI_OFFER_ANALYSIS_MODEL: ${AI_OFFER_ANALYSIS_MODEL:-rules-v1}
+      AI_TAXONOMY_SUGGESTION_ENABLED: ${AI_TAXONOMY_SUGGESTION_ENABLED:-true}
+      AI_TAXONOMY_SUGGESTION_PROVIDER: ${AI_TAXONOMY_SUGGESTION_PROVIDER:-deterministic}
+      AI_TAXONOMY_SUGGESTION_MODEL: ${AI_TAXONOMY_SUGGESTION_MODEL:-rules-v1}
+      AI_MATCH_RERANK_ENABLED: ${AI_MATCH_RERANK_ENABLED:-false}
+      AI_MATCH_RERANK_PROVIDER: ${AI_MATCH_RERANK_PROVIDER:-deterministic}
+      AI_MATCH_RERANK_MODEL: ${AI_MATCH_RERANK_MODEL:-rules-v1}
+      MATCHING_RETRIEVAL_LIMIT: ${MATCHING_RETRIEVAL_LIMIT:-100}
+      MATCHING_SHORTLIST_LIMIT: ${MATCHING_SHORTLIST_LIMIT:-20}
+      MATCHING_WEIGHTS_JSON: ${MATCHING_WEIGHTS_JSON:-}
+      # Rate Limiting
+      RATE_LIMIT_AUTH_STRICT_LIMIT: ${RATE_LIMIT_AUTH_STRICT_LIMIT:-10}
+      RATE_LIMIT_AUTH_STRICT_WINDOW: ${RATE_LIMIT_AUTH_STRICT_WINDOW:-1m}
+      RATE_LIMIT_PUBLIC_READ_LIMIT: ${RATE_LIMIT_PUBLIC_READ_LIMIT:-600}
+      RATE_LIMIT_PUBLIC_READ_WINDOW: ${RATE_LIMIT_PUBLIC_READ_WINDOW:-1m}
+      RATE_LIMIT_PRIVATE_READ_LIMIT: ${RATE_LIMIT_PRIVATE_READ_LIMIT:-600}
+      RATE_LIMIT_PRIVATE_READ_WINDOW: ${RATE_LIMIT_PRIVATE_READ_WINDOW:-1m}
+      RATE_LIMIT_WRITE_STANDARD_LIMIT: ${RATE_LIMIT_WRITE_STANDARD_LIMIT:-60}
+      RATE_LIMIT_WRITE_STANDARD_WINDOW: ${RATE_LIMIT_WRITE_STANDARD_WINDOW:-1m}
+      RATE_LIMIT_UPLOAD_LIMIT: ${RATE_LIMIT_UPLOAD_LIMIT:-20}
+      RATE_LIMIT_UPLOAD_WINDOW: ${RATE_LIMIT_UPLOAD_WINDOW:-1m}
+      RATE_LIMIT_CHAT_SEND_LIMIT: ${RATE_LIMIT_CHAT_SEND_LIMIT:-60}
+      RATE_LIMIT_CHAT_SEND_WINDOW: ${RATE_LIMIT_CHAT_SEND_WINDOW:-1m}
+      RATE_LIMIT_PROPOSAL_SEND_LIMIT: ${RATE_LIMIT_PROPOSAL_SEND_LIMIT:-10}
+      RATE_LIMIT_PROPOSAL_SEND_WINDOW: ${RATE_LIMIT_PROPOSAL_SEND_WINDOW:-1m}
+      RATE_LIMIT_PUBLIC_AI_LIMIT: ${RATE_LIMIT_PUBLIC_AI_LIMIT:-10}
+      RATE_LIMIT_PUBLIC_AI_WINDOW: ${RATE_LIMIT_PUBLIC_AI_WINDOW:-1m}
+      RATE_LIMIT_ADMIN_LIMIT: ${RATE_LIMIT_ADMIN_LIMIT:-30}
+      RATE_LIMIT_ADMIN_WINDOW: ${RATE_LIMIT_ADMIN_WINDOW:-1m}
+    ports:
+      - "127.0.0.1:8080:8080"
+    volumes:
+      - naimio_media:/var/lib/naimio-media
+    networks: [app, data]
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/health/ready"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  create-admin:
+    image: freelance-api
+    entrypoint: [ "/create-admin" ]
+    environment:
+      DATABASE_URL: postgres://freelance:${POSTGRES_PASSWORD}@postgres:5432/freelance?sslmode=disable
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - data
+
+  worker:
+    build: ./worker
+    depends_on:
+      postgres: { condition: service_healthy }
+    environment:
+      APP_ENV: ${APP_ENV:-production}
+      DATABASE_URL: postgres://freelance:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}@postgres:5432/freelance?sslmode=disable
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:?set PUBLIC_BASE_URL}
+      SMTP_ADDRESS: ${SMTP_ADDRESS:?set SMTP_ADDRESS}
+      SMTP_USERNAME: ${SMTP_USERNAME:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_FROM: ${SMTP_FROM:?set SMTP_FROM}
+      DB_MAX_OPEN_CONNS: ${DB_MAX_OPEN_CONNS:-20}
+      DB_MAX_IDLE_CONNS: ${DB_MAX_IDLE_CONNS:-5}
+      DB_CONN_MAX_LIFETIME: ${DB_CONN_MAX_LIFETIME:-30m}
+      DB_CONN_MAX_IDLE_TIME: ${DB_CONN_MAX_IDLE_TIME:-5m}
+      PAYMENT_RECONCILIATION_URL: ${PAYMENT_RECONCILIATION_URL:-http://api:8080/api/v1/internal/payments/reconcile}
+      PAYMENT_RECONCILIATION_TOKEN: ${PAYMENT_RECONCILIATION_TOKEN:-}
+      PAYMENT_RECONCILIATION_INTERVAL: ${PAYMENT_RECONCILIATION_INTERVAL:-1m}
+      PAYMENT_RECONCILIATION_BATCH: ${PAYMENT_RECONCILIATION_BATCH:-100}
+      PRO_RENEWAL_URL: ${PRO_RENEWAL_URL:-http://api:8080/api/v1/internal/payments/pro-renew}
+      PRO_RENEWAL_TOKEN: ${PRO_RENEWAL_TOKEN:-}
+      PRO_RENEWAL_INTERVAL: ${PRO_RENEWAL_INTERVAL:-5m}
+      PRO_RENEWAL_BATCH: ${PRO_RENEWAL_BATCH:-50}
+    networks: [data]
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8081/health/ready"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: freelance
+      POSTGRES_USER: freelance
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+      TZ: UTC
+    networks: [data]
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U freelance -d freelance"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    networks: [data]
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?set REDIS_PASSWORD}
+    command: ["sh", "-c", "exec redis-server --appendonly yes --maxmemory-policy allkeys-lru --requirepass \"$$REDIS_PASSWORD\""]
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "REDISCLI_AUTH=\"$$REDIS_PASSWORD\" redis-cli ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  migrate:
+    image: postgres:16-alpine
+    profiles: [migration]
+    depends_on:
+      postgres: { condition: service_healthy }
+    environment:
+      PGHOST: postgres
+      PGUSER: freelance
+      PGDATABASE: freelance
+      PGPASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+      MIGRATIONS_DIR: /migrations
+    volumes:
+      - ./db/migrations:/migrations:ro
+      - ./scripts/migrate.sh:/migrate.sh:ro
+    entrypoint: ["/migrate.sh"]
+    networks: [data]
+
+volumes:
+  postgres_data:
+  redis_data:
+  naimio_media:
+
+networks:
+  app:
+  data:
+    internal: true

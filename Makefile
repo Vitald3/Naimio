@@ -109,30 +109,6 @@ checkpoint-mvp: lint test build web-check
 	./tests/integration/phase2.sh && ./tests/integration/phase4.sh && ./tests/integration/phase5.sh && ./tests/integration/phase6a.sh && ./tests/integration/phase6.sh && ./tests/integration/phase7.sh && ./tests/integration/phase8.sh
 	./tests/integration/mvp-safe-deal.sh
 
-staging-check:
-	./scripts/staging-check.sh
-
-staging-deploy: staging-check
-	docker compose --env-file $${STAGING_ENV_FILE:-.env.staging} -f docker-compose.yml -f docker-compose.staging.yml build api worker web
-	docker compose --env-file $${STAGING_ENV_FILE:-.env.staging} -f docker-compose.yml -f docker-compose.staging.yml up -d postgres redis
-	docker compose --env-file $${STAGING_ENV_FILE:-.env.staging} -f docker-compose.yml -f docker-compose.staging.yml run --rm migrate
-	docker compose --env-file $${STAGING_ENV_FILE:-.env.staging} -f docker-compose.yml -f docker-compose.staging.yml up -d api worker web nginx
-
-staging-smoke:
-	@curl --fail --silent --show-error "$${STAGING_BASE_URL:-$${PUBLIC_BASE_URL:?set STAGING_BASE_URL or PUBLIC_BASE_URL}}/health/ready" >/dev/null
-	@echo "staging readiness passed"
-
-staging-backup:
-	: "$${BACKUP_DIR:?set BACKUP_DIR to an off-host or mounted destination}"
-	mkdir -p "$${BACKUP_DIR}"
-	docker compose --env-file $${STAGING_ENV_FILE:-.env.staging} -f docker-compose.yml -f docker-compose.staging.yml exec -T postgres pg_dump -U freelance -d freelance --format=custom > "$${BACKUP_DIR}/naimio-staging-$$(date -u +%Y%m%dT%H%M%SZ).dump"
-
-staging-restore-test:
-	: "$${BACKUP_FILE:?set BACKUP_FILE to a staging custom-format dump}"
-	: "$${RESTORE_DATABASE_URL:?set disposable RESTORE_DATABASE_URL}"
-	pg_restore --clean --if-exists --exit-on-error --dbname "$${RESTORE_DATABASE_URL}" "$${BACKUP_FILE}"
-	@echo "staging restore completed against disposable database"
-
 load-smoke:
 	LOAD_PROFILE=smoke ./tests/load/phase10-k6.sh
 
