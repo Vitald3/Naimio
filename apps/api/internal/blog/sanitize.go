@@ -30,6 +30,19 @@ func safeImage(raw string) bool {
 		id := strings.TrimPrefix(raw, "/api/v1/blog/media/")
 		return regexpUUID.MatchString(id)
 	}
+	if strings.HasPrefix(raw, "https://") || strings.HasPrefix(raw, "http://") {
+		u, err := url.Parse(raw)
+		if err == nil {
+			if strings.HasPrefix(u.Path, "/api/v1/media/") {
+				id := strings.TrimPrefix(u.Path, "/api/v1/media/")
+				return regexpUUID.MatchString(id)
+			}
+			if strings.HasPrefix(u.Path, "/api/v1/blog/media/") {
+				id := strings.TrimPrefix(u.Path, "/api/v1/blog/media/")
+				return regexpUUID.MatchString(id)
+			}
+		}
+	}
 	return false
 }
 

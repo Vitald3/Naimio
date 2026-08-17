@@ -4,10 +4,12 @@ const localAddress = (
   process.env.local_ip_address ?? process.env.LOCAL_IP_ADDRESS
 )?.trim();
 export const siteURL = new URL(
-  process.env.NEXT_PUBLIC_SITE_URL ??
-    (localAddress && localAddress !== "0.0.0.0"
-      ? `http://${localAddress}:8088`
-      : "http://localhost:8088"),
+  process.env.NEXT_PUBLIC_SITE_URL?.trim() ||
+    (process.env.NODE_ENV === "production"
+      ? "https://naimio.ru"
+      : localAddress && localAddress !== "0.0.0.0"
+        ? `http://${localAddress}:8088`
+        : "http://localhost:8088"),
 );
 export const canonical = (path: string) => new URL(path, siteURL).toString();
 export const summary = (

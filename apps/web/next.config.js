@@ -14,8 +14,58 @@
 const isProd = process.env.NODE_ENV === "production";
 const proxyTarget = process.env.API_PROXY_TARGET || (isProd ? undefined : "http://127.0.0.1:8080");
 
+const siteUrlStr = process.env.NEXT_PUBLIC_SITE_URL || process.env.PUBLIC_BASE_URL || "https://naimio.ru";
+let configuredHost = "naimio.ru";
+let configuredProtocol = "https";
+try {
+  const parsed = new URL(siteUrlStr);
+  configuredHost = parsed.hostname;
+  configuredProtocol = parsed.protocol.replace(":", "");
+} catch {}
+
+const remotePatterns = [
+  {
+    protocol: "https",
+    hostname: "naimio.ru",
+    pathname: "/api/v1/media/**",
+  },
+  {
+    protocol: "https",
+    hostname: "naimio.ru",
+    pathname: "/api/v1/blog/media/**",
+  },
+  {
+    protocol: "http",
+    hostname: "localhost",
+    pathname: "/api/v1/media/**",
+  },
+  {
+    protocol: "http",
+    hostname: "127.0.0.1",
+    pathname: "/api/v1/media/**",
+  },
+];
+
+if (configuredHost && configuredHost !== "naimio.ru" && configuredHost !== "localhost" && configuredHost !== "127.0.0.1") {
+  remotePatterns.push(
+    {
+      protocol: configuredProtocol,
+      hostname: configuredHost,
+      pathname: "/api/v1/media/**",
+    },
+    {
+      protocol: configuredProtocol,
+      hostname: configuredHost,
+      pathname: "/api/v1/blog/media/**",
+    }
+  );
+}
+
 const nextConfig = {
   reactStrictMode: true,
+  images: {
+    remotePatterns,
+  },
   async rewrites() {
     if (!proxyTarget) return [];
     return [
