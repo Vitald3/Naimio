@@ -27,36 +27,31 @@ const remotePatterns = [
   {
     protocol: "https",
     hostname: "naimio.ru",
-    pathname: "/api/v1/media/**",
+    pathname: "/**",
   },
   {
-    protocol: "https",
+    protocol: "http",
     hostname: "naimio.ru",
-    pathname: "/api/v1/blog/media/**",
+    pathname: "/**",
   },
   {
     protocol: "http",
     hostname: "localhost",
-    pathname: "/api/v1/media/**",
+    pathname: "/**",
   },
   {
     protocol: "http",
     hostname: "127.0.0.1",
-    pathname: "/api/v1/media/**",
+    pathname: "/**",
   },
 ];
 
-if (configuredHost && configuredHost !== "naimio.ru" && configuredHost !== "localhost" && configuredHost !== "127.0.0.1") {
+if (configuredHost && !["naimio.ru", "localhost", "127.0.0.1"].includes(configuredHost)) {
   remotePatterns.push(
     {
       protocol: configuredProtocol,
       hostname: configuredHost,
-      pathname: "/api/v1/media/**",
-    },
-    {
-      protocol: configuredProtocol,
-      hostname: configuredHost,
-      pathname: "/api/v1/blog/media/**",
+      pathname: "/**",
     }
   );
 }

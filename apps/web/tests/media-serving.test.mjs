@@ -9,7 +9,7 @@ test("universal media serving and Next.js remotePatterns configuration", () => {
   const nextConfig = readFileSync(new URL("../next.config.js", import.meta.url), "utf8");
   assert.match(nextConfig, /remotePatterns/);
   assert.match(nextConfig, /hostname:\s*["']naimio\.ru["']/);
-  assert.match(nextConfig, /pathname:\s*["']\/api\/v1\/media\/\*\*["']/);
+  assert.match(nextConfig, /pathname:\s*["']\/\*\*["']/);
 
   const media = read("media.ts");
   assert.match(media, /export function mediaURL/);
